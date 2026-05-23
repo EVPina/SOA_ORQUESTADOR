@@ -1,1 +1,29 @@
-spring.application.name=orchestrator
+server:
+  port: 8080
+
+spring:
+  application:
+    name: soa-orquestador
+
+servicios:
+  usuarios:
+    url: ${SERVICE_USUARIOS_URL:http://localhost:8081}
+  qr:
+    url: ${SERVICE_QR_URL:http://localhost:8082}
+  clientes:
+    url: ${SERVICE_CLIENTES_URL:http://localhost:8083}
+  ventas:
+    url: ${SERVICE_VENTAS_URL:http://localhost:8084}
+
+logging:
+  level:
+    com.orquestador: DEBUG
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+    endpoint:
+      health:
+        show-details: always

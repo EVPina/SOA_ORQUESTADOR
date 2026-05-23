@@ -1,0 +1,12 @@
+[submodule "servicios/usuarios"]
+	path = servicios/usuarios
+	url = https://github.com/EVPina/SOA_BACK_USUARIOS.git
+[submodule "servicios/qr"]
+	path = servicios/qr
+	url = https://github.com/EVPina/SOA_BACK_QR.git
+[submodule "servicios/clientes"]
+	path = servicios/clientes
+	url = https://github.com/EVPina/SOA_BACK_CLIENTES.git
+[submodule "servicios/ventas"]
+	path = servicios/ventas
+	url = https://github.com/EVPina/SOA_BACK_VENTAS.git
