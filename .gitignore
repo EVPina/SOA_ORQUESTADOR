@@ -1,0 +1,25 @@
+# IDE
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+
+# Logs
+*.log
+logs/
+
+# Docker
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
