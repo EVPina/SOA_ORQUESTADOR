@@ -1,11 +1,17 @@
-version: '3.8'
-
 services:
   servicio-usuarios:
     build: ./servicios/usuarios
     container_name: soa-usuarios
     ports:
-      - "8081:8081"              # ← Mapea al puerto que usa la app (8081)
+      - "8081:8081"
+    networks:
+      - soa-network
+
+  servicio-ventas:
+    build: ./servicios/ventas
+    container_name: soa-ventas
+    ports:
+      - "8082:8082"
     networks:
       - soa-network
 
@@ -13,23 +19,7 @@ services:
     build: ./servicios/qr
     container_name: soa-qr
     ports:
-      - "8083:8083"              # ← QR usa puerto 8083
-    networks:
-      - soa-network
-
-  # servicio-clientes:
-  #   build: ./servicios/clientes
-  #   container_name: soa-clientes
-  #   ports:
-  #     - "8084:8084"              # ← Clientes usa puerto 8084
-  #   networks:
-  #     - soa-network
-
-  servicio-ventas:
-    build: ./servicios/ventas
-    container_name: soa-ventas
-    ports:
-      - "8082:8082"              # ← Ventas usa puerto 8082
+      - "8083:8083"
     networks:
       - soa-network
 
@@ -40,17 +30,12 @@ services:
       - "8080:8080"
     environment:
       - SERVICE_USUARIOS_URL=http://servicio-usuarios:8081
-      - SERVICE_QR_URL=http://servicio-qr:8083
-      # - SERVICE_CLIENTES_URL=http://servicio-clientes:8084
       - SERVICE_VENTAS_URL=http://servicio-ventas:8082
+      - SERVICE_QR_URL=http://servicio-qr:8083/api
     networks:
       - soa-network
-    depends_on:
-      - servicio-usuarios
-      - servicio-qr
-      # - servicio-clientes
-      - servicio-ventas
 
+# ← ESTO ES LO QUE FALTABA
 networks:
   soa-network:
     driver: bridge

@@ -1,7 +1,5 @@
 package com.orquestador.service;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
@@ -11,25 +9,30 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class OrquestadorService {
 
     private final WebClient usuariosWebClient;
     private final WebClient ventasWebClient;
     private final WebClient qrWebClient;
 
+    public OrquestadorService(WebClient usuariosWebClient, 
+                               WebClient ventasWebClient, 
+                               WebClient qrWebClient) {
+        this.usuariosWebClient = usuariosWebClient;
+        this.ventasWebClient = ventasWebClient;
+        this.qrWebClient = qrWebClient;
+    }
+
     public Mono<Map<String, Object>> healthCheck() {
         Map<String, Object> health = new HashMap<>();
         health.put("orquestador", "UP");
-        health.put("timestamp", LocalDateTime.now());
         health.put("mensaje", "Orquestador funcionando");
-        
+        health.put("timestamp", LocalDateTime.now());
         return Mono.just(health);
     }
 
     public Mono<Map<String, Object>> workflowEjemplo(Map<String, Object> request) {
-        log.info("Ejecutando workflow de ejemplo: {}", request);
+        System.out.println("Ejecutando workflow de ejemplo: " + request);
         
         Map<String, Object> response = new HashMap<>();
         response.put("success", true);
