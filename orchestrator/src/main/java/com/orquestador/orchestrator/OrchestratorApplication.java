@@ -2,15 +2,12 @@ package com.orquestador.orchestrator;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@EnableScheduling
+@ComponentScan(basePackages = {"com.orquestador"}) 
 public class OrchestratorApplication {
-
-	public static void main(String[] args) {
-		SpringApplication.run(OrchestratorApplication.class, args);
-System.out.println("🎵 Orquestador SOA iniciado en puerto 8080");
-	}
-
+    public static void main(String[] args) {
+        SpringApplication.run(OrchestratorApplication.class, args);
+    }
 }

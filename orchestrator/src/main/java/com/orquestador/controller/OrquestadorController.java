@@ -15,6 +15,11 @@ public class OrquestadorController {
 
     private final OrquestadorService orquestadorService;
 
+    @GetMapping("/ping")
+    public ResponseEntity<String> ping() {
+        return ResponseEntity.ok("Orquestador funcionando correctamente");
+    }
+
     @GetMapping("/health")
     public Mono<ResponseEntity<Map<String, Object>>> health() {
         return orquestadorService.healthCheck()
@@ -25,10 +30,5 @@ public class OrquestadorController {
     public Mono<ResponseEntity<Map<String, Object>>> workflowEjemplo(@RequestBody Map<String, Object> request) {
         return orquestadorService.workflowEjemplo(request)
             .map(ResponseEntity::ok);
-    }
-
-    @GetMapping("/ping")
-    public ResponseEntity<String> ping() {
-        return ResponseEntity.ok("Orquestador funcionando");
     }
 }
