@@ -10,3 +10,6 @@
 [submodule "servicios/ventas"]
 	path = servicios/ventas
 	url = https://github.com/EVPina/SOA_BACK_VENTAS.git
+[submodule "servicios/cocina"]
+	path = servicios/cocina
+	url = https://github.com/EVPina/SOA_BACK_COCINA.git

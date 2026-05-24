@@ -23,6 +23,20 @@ services:
     networks:
       - soa-network
 
+  servicio-cocina:
+    build: ./servicios/cocina
+    container_name: soa-cocina
+    ports:
+      - "8085:8085"
+    networks:
+      - soa-network
+    # La siguiente línea es opcional pero muy útil para saber que el servicio está listo
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8085/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   orquestador:
     build: ./orchestrator
     container_name: soa-orquestador
@@ -32,10 +46,10 @@ services:
       - SERVICE_USUARIOS_URL=http://servicio-usuarios:8081
       - SERVICE_VENTAS_URL=http://servicio-ventas:8082
       - SERVICE_QR_URL=http://servicio-qr:8083/api
+      - SERVICE_COCINA_URL=http://servicio-cocina:8085
     networks:
       - soa-network
 
-# ← ESTO ES LO QUE FALTABA
 networks:
   soa-network:
     driver: bridge
