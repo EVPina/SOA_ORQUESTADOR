@@ -13,3 +13,9 @@
 [submodule "servicios/cocina"]
 	path = servicios/cocina
 	url = https://github.com/EVPina/SOA_BACK_COCINA.git
+[submodule "servicios/inventario"]
+	path = servicios/inventario
+	url = https://github.com/EVPina/SOA_BACK_INVENTARIO
+[submodule "servicios/finanzas"]
+	path = servicios/finanzas
+	url = https://github.com/EVPina/SOA_BACK_FINANZAS

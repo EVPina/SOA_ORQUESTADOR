@@ -14,6 +14,12 @@ servicios:
     url: ${SERVICE_CLIENTES_URL:http://localhost:8083}
   ventas:
     url: ${SERVICE_VENTAS_URL:http://localhost:8084}
+  cocina:
+    url: ${SERVICE_COCINA_URL:http://localhost:8086}
+  inventario:
+    url: ${SERVICE_INVENTARIO_URL:http://localhost:8087}
+  finanzas:
+    url: ${SERVICE_FINANZAS_URL:http://localhost:8088}
 
 logging:
   level:

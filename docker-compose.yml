@@ -6,36 +6,42 @@ services:
       - "8081:8081"
     networks:
       - soa-network
+  servicio-qr:
+    build: ./servicios/qr
+    container_name: soa-qr
+    ports:
+      - "8084:8084"
+    networks:
+      - soa-network
 
   servicio-ventas:
     build: ./servicios/ventas
     container_name: soa-ventas
     ports:
-      - "8082:8082"
+      - "8085:8085"
     networks:
       - soa-network
-
-  servicio-qr:
-    build: ./servicios/qr
-    container_name: soa-qr
-    ports:
-      - "8083:8083"
-    networks:
-      - soa-network
-
   servicio-cocina:
     build: ./servicios/cocina
     container_name: soa-cocina
     ports:
-      - "8085:8085"
+      - "8086:8086"
     networks:
       - soa-network
-    # La siguiente línea es opcional pero muy útil para saber que el servicio está listo
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8085/actuator/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  servicio-inventario:
+    build: ./servicios/inventario
+    container_name: soa-inventario
+    ports:
+      - "8087:8087"
+    networks:
+      - soa-network
+  servicio-finanzas:
+    build: ./servicios/finanzas
+    container_name: soa-finanzas
+    ports:
+      - "8088:8088"
+    networks:
+      - soa-network
 
   orquestador:
     build: ./orchestrator
@@ -44,9 +50,11 @@ services:
       - "8080:8080"
     environment:
       - SERVICE_USUARIOS_URL=http://servicio-usuarios:8081
-      - SERVICE_VENTAS_URL=http://servicio-ventas:8082
-      - SERVICE_QR_URL=http://servicio-qr:8083/api
-      - SERVICE_COCINA_URL=http://servicio-cocina:8085
+      - SERVICE_VENTAS_URL=http://servicio-ventas:8085
+      - SERVICE_QR_URL=http://servicio-qr:8084/api
+      - SERVICE_COCINA_URL=http://servicio-cocina:8086
+      - SERVICE_INVENTARIO_URL=http://servicio-inventario:8087
+      - SERVICE_FINANZAS_URL=http://servicio-finanzas:8088     # <<--- NUEVA
     networks:
       - soa-network
 
