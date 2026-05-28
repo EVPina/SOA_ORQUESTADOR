@@ -6,6 +6,20 @@ services:
       - "8081:8081"
     networks:
       - soa-network
+  servicio-clientes:
+    build: ./servicios/clientes
+    container_name: soa-clientes
+    ports:
+      - "8082:8082"
+    networks:
+      - soa-network
+  servicio-mesas:
+    build: ./servicios/mesas
+    container_name: soa-mesas
+    ports:
+      - "8083:8083"
+    networks:
+      - soa-network
   servicio-qr:
     build: ./servicios/qr
     container_name: soa-qr
@@ -50,8 +64,10 @@ services:
       - "8080:8080"
     environment:
       - SERVICE_USUARIOS_URL=http://servicio-usuarios:8081
-      - SERVICE_VENTAS_URL=http://servicio-ventas:8085
+      - SERVICE_CLIENTES_URL=http://servicio-clientes:8082
+      - SERVICE_MESAS_URL=http://servicio-mesas:8083
       - SERVICE_QR_URL=http://servicio-qr:8084/api
+      - SERVICE_VENTAS_URL=http://servicio-ventas:8085
       - SERVICE_COCINA_URL=http://servicio-cocina:8086
       - SERVICE_INVENTARIO_URL=http://servicio-inventario:8087
       - SERVICE_FINANZAS_URL=http://servicio-finanzas:8088     # <<--- NUEVA
