@@ -19,3 +19,6 @@
 [submodule "servicios/finanzas"]
 	path = servicios/finanzas
 	url = https://github.com/EVPina/SOA_BACK_FINANZAS
+[submodule "servicios/mesas"]
+	path = servicios/mesas
+	url = https://github.com/EVPina/SOA_BACK_MESAS
