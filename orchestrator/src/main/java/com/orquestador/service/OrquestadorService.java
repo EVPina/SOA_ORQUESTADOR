@@ -1,7 +1,14 @@
 package com.orquestador.service;
 
 import com.orquestador.dto.PedidoRequestDTO;
+import com.orquestador.dto.AperturaCajaRequestDTO;
+import com.orquestador.dto.AuthLoginRequestDTO;
+import com.orquestador.dto.CierreCajaRequestDTO;
+import com.orquestador.dto.PagoCompletoRequestDTO;
 import com.orquestador.dto.PagoRequestDTO;
+import com.orquestador.dto.PedidoMozoRequestDTO;
+import com.orquestador.dto.PedidoQRRequestDTO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,152 +29,162 @@ import java.util.UUID;
 @Slf4j
 public class OrquestadorService {
 
-    private final WebClient usuariosWebClient;
-    private final WebClient ventasWebClient;
-    private final WebClient cocinaWebClient;
-    private final WebClient inventarioWebClient;
-    private final WebClient finanzasWebClient;
-    private final WebClient qrWebClient;
+    private final WebClient usuariosWebClient, ventasWebClient, cocinaWebClient, inventarioWebClient, finanzasWebClient, clientesWebClient,mesasWebClient;
 
-    // ==================== FLUJO 1: PEDIDO DESDE QR ====================
-    public Mono<Map<String, Object>> flujoPedidoQR(PedidoRequestDTO request) {
-    log.info("Iniciando flujo de pedido desde QR: {}", request);
+     // ==================== FLUJO PEDIDO QR ====================
     
-    List<Map<String, Object>> items = request.getItems();
-    
-    // Paso 1: Registrar/Autenticar cliente (opcional)
-    // Paso 1: Registrar/Autenticar cliente (CORREGIDO COMPLETO)
-    Mono<Map<String, Object>> clienteMono;
-    if (request.getClienteEmail() != null && !request.getClienteEmail().isEmpty()) {
+    public Mono<Map<String, Object>> procesarPedidoQR(PedidoQRRequestDTO request) {
+        log.info("Procesando pedido QR para mesa: {}", request.getMesaId());
         
-        // Datos para REGISTRO
-        Map<String, Object> registerData = new HashMap<>();
-        registerData.put("username", request.getClienteEmail());
-        registerData.put("email", request.getClienteEmail());
-        registerData.put("password", "123456");
-        registerData.put("nombreCompleto", request.getClienteNombre());
-        registerData.put("rol", "CLIENTE");
-        
-        // Datos para LOGIN (cuando el usuario ya existe)
-        Map<String, Object> loginData = new HashMap<>();
-        loginData.put("username", request.getClienteEmail());
-        loginData.put("password", "123456");
-        
-        clienteMono = usuariosWebClient.post()
-            .uri("/api/auth/register")
-            .bodyValue(registerData)
-            .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-            .onErrorResume(e -> {
-                log.warn("Usuario ya existe, intentando login: {}", request.getClienteEmail());
-                return usuariosWebClient.post()
-                    .uri("/api/auth/login")
-                    .bodyValue(loginData)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
-            });
-    } else {
-        Map<String, Object> anonimo = new HashMap<>();
-        anonimo.put("id", "anonimo-" + System.currentTimeMillis());
-        anonimo.put("tipo", "ANONIMO");
-        clienteMono = Mono.just(anonimo);
-    }
-    
-    return clienteMono
-    .flatMap(cliente -> {
-        // Paso 2: Verificar stock para cada item
-        return Flux.fromIterable(items)
-            .flatMap(item -> {
-                Object productoIdObj = item.get("productoId");
-                UUID productoId = productoIdObj instanceof String ? UUID.fromString((String) productoIdObj) : (UUID) productoIdObj;
-                Integer cantidad = item.get("cantidad") instanceof Integer ? (Integer) item.get("cantidad") : Integer.parseInt(item.get("cantidad").toString());
-                
-                Map<String, Object> verificarRequest = new HashMap<>();
-                verificarRequest.put("productoId", productoId);
-                verificarRequest.put("cantidad", cantidad);
-                verificarRequest.put("usuarioId", UUID.fromString("11111111-1111-1111-1111-111111111111"));
-                
-                log.info("Verificando stock: producto={}, cantidad={}", productoId, cantidad);
-                
-                return inventarioWebClient.post()
-                    .uri("/api/v1/produccion/verificar")
-                    .bodyValue(verificarRequest)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                    .doOnNext(verificacion -> {
-                        Boolean disponible = (Boolean) verificacion.getOrDefault("disponible", false);
-                        if (!disponible) {
-                            throw new RuntimeException("Stock insuficiente para producto: " + productoId);
-                        }
-                    });
+        // Paso 1: Buscar o registrar cliente
+        return buscarOCrearCliente(request.getClienteEmail(), request.getClienteNombre(), request.getClienteTelefono())
+            .flatMap(cliente -> ocuparMesa(request.getMesaId()).thenReturn(cliente))
+            .flatMap(cliente -> verificarStockItems(request.getItems()).thenReturn(cliente))
+            .flatMap(cliente -> {
+                UUID clienteId = extractClienteId(cliente);
+                return crearPedidoEnVentas(request, clienteId);
             })
-            .then(Mono.just(cliente));  // ← IMPORTANTE: Mantiene el cliente después de verificar stock
-    })
-    .flatMap(cliente -> {
-        // Paso 3: Crear pedido en ventas
-        Object clienteIdObj = cliente.get("id");
-        UUID clienteId = clienteIdObj instanceof String ? UUID.fromString((String) clienteIdObj) : (UUID) clienteIdObj;
+            .flatMap(pedido -> enviarOrdenACocina(pedido, request.getItems()))
+            .onErrorResume(error -> {
+                log.error("Error en pedido QR: {}", error.getMessage());
+                return Mono.just(Map.of(
+                    "success", false,
+                    "error", error.getMessage(),
+                    "timestamp", LocalDateTime.now()
+                ));
+            });
+    }
+
+    // ==================== FLUJO PEDIDO MOZO ====================
+    
+    public Mono<Map<String, Object>> procesarPedidoMozo(PedidoMozoRequestDTO request) {
+        log.info("Procesando pedido asistido por mozo para mesa: {}", request.getMesaId());
         
+        return clientesWebClient.get()
+                .uri("/api/clientes/{id}", request.getClienteId())
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+            .flatMap(cliente -> ocuparMesa(request.getMesaId()).thenReturn(cliente))
+            .flatMap(cliente -> verificarStockItems(request.getItems()).thenReturn(cliente))
+            .flatMap(cliente -> {
+                return crearPedidoEnVentasMozo(request);
+            })
+            .flatMap(pedido -> enviarOrdenACocina(pedido, request.getItems()))
+            .onErrorResume(error -> {
+                log.error("Error en pedido mozo: {}", error.getMessage());
+                return Mono.just(Map.of(
+                    "success", false,
+                    "error", error.getMessage(),
+                    "timestamp", LocalDateTime.now()
+                ));
+            });
+    }
+
+    // ==================== MÉTODOS AUXILIARES ====================
+    
+    private Mono<Map<String, Object>> buscarOCrearCliente(String email, String nombre, String telefono) {
+        if (email == null || email.isEmpty()) {
+            Map<String, Object> anonimo = new HashMap<>();
+            anonimo.put("id", "anonimo-" + System.currentTimeMillis());
+            return Mono.just(anonimo);
+        }
+        
+        return clientesWebClient.get()
+                .uri("/api/clientes/buscar?valor={email}", email)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(error -> {
+                    Map<String, Object> nuevoCliente = new HashMap<>();
+                    nuevoCliente.put("email", email);
+                    nuevoCliente.put("nombre", nombre);
+                    nuevoCliente.put("telefono", telefono);
+                    nuevoCliente.put("password", "123456");
+                    return clientesWebClient.post()
+                            .uri("/api/clientes/registro")
+                            .bodyValue(nuevoCliente)
+                            .retrieve()
+                            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+                });
+    }
+
+    private Mono<Void> ocuparMesa(UUID mesaId) {
+        return mesasWebClient.put()
+                .uri("/mesas/{id}/asignar", mesaId)
+                .retrieve()
+                .toBodilessEntity()
+                .then();
+    }
+
+    private Mono<Void> verificarStockItems(List<Map<String, Object>> items) {
+        if (items == null || items.isEmpty()) {
+            return Mono.empty();
+        }
+        
+        return Flux.fromIterable(items)
+                .flatMap(item -> {
+                    String productoId = (String) item.get("productoId");
+                    Integer cantidad = (Integer) item.get("cantidad");
+                    
+                    Map<String, Object> stockRequest = new HashMap<>();
+                    stockRequest.put("productoId", productoId);
+                    stockRequest.put("cantidad", cantidad);
+                    stockRequest.put("usuarioId", "11111111-1111-1111-1111-111111111111");
+                    
+                    return inventarioWebClient.post()
+                            .uri("/produccion/verificar")
+                            .bodyValue(stockRequest)
+                            .retrieve()
+                            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                            .doOnNext(response -> {
+                                Boolean disponible = (Boolean) response.get("disponible");
+                                if (!Boolean.TRUE.equals(disponible)) {
+                                    throw new RuntimeException("Stock insuficiente para: " + productoId);
+                                }
+                            });
+                })
+                .then();
+    }
+
+    private Mono<Map<String, Object>> crearPedidoEnVentas(PedidoQRRequestDTO request, UUID clienteId) {
         Map<String, Object> pedidoRequest = new HashMap<>();
+        pedidoRequest.put("sesionMesaId", request.getMesaId());
         pedidoRequest.put("clienteId", clienteId);
-        pedidoRequest.put("items", items);
+        pedidoRequest.put("origen", "QR");
+        pedidoRequest.put("detalles", request.getItems());
         pedidoRequest.put("total", request.getTotal());
         
         return ventasWebClient.post()
-            .uri("/api/v1/pedidos")
-            .bodyValue(pedidoRequest)
-            .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
-    })
-    .flatMap(pedido -> {
-        // Paso 4: Enviar a cocina
+                .uri("/pedidos")
+                .bodyValue(pedidoRequest)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    private Mono<Map<String, Object>> crearPedidoEnVentasMozo(PedidoMozoRequestDTO request) {
+        Map<String, Object> pedidoRequest = new HashMap<>();
+        pedidoRequest.put("sesionMesaId", request.getMesaId());
+        pedidoRequest.put("clienteId", request.getClienteId());
+        pedidoRequest.put("usuarioTomoId", request.getMozoId());
+        pedidoRequest.put("origen", "MOZO");
+        pedidoRequest.put("detalles", request.getItems());
+        pedidoRequest.put("total", request.getTotal());
+        pedidoRequest.put("notas", request.getNotas());
+        
+        return ventasWebClient.post()
+                .uri("/pedidos")
+                .bodyValue(pedidoRequest)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    private Mono<Map<String, Object>> enviarOrdenACocina(Map<String, Object> pedido, List<Map<String, Object>> items) {
         Map<String, Object> detalleRequest = new HashMap<>();
         detalleRequest.put("ordenId", pedido.get("id"));
         detalleRequest.put("productos", items);
         detalleRequest.put("estado", "PENDIENTE");
         
         return cocinaWebClient.post()
-            .uri("/api/v1/detalles-produccion")
-            .bodyValue(detalleRequest)
-            .retrieve()
-            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-            .map(respuesta -> {
-                Map<String, Object> resultado = new HashMap<>();
-                resultado.put("success", true);
-                resultado.put("pedidoId", pedido.get("id"));
-                resultado.put("detalleId", respuesta.get("id"));
-                resultado.put("mensaje", "Pedido enviado a cocina");
-                resultado.put("tiempoEstimado", "25 minutos");
-                resultado.put("timestamp", LocalDateTime.now());
-                return resultado;
-            });
-    })
-    
-        .flatMap(cliente -> {
-            // Paso 3: Crear pedido en ventas
-            Object clienteIdObj = cliente.get("id");
-            UUID clienteId = clienteIdObj instanceof String ? UUID.fromString((String) clienteIdObj) : (UUID) clienteIdObj;
-            
-            Map<String, Object> pedidoRequest = new HashMap<>();
-            pedidoRequest.put("clienteId", clienteId);
-            pedidoRequest.put("items", items);
-            pedidoRequest.put("total", request.getTotal());
-            
-            return ventasWebClient.post()
-                .uri("/api/v1/pedidos")
-                .bodyValue(pedidoRequest)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
-        })
-        .flatMap(pedido -> {
-            // Paso 4: Enviar a cocina
-            Map<String, Object> detalleRequest = new HashMap<>();
-            detalleRequest.put("ordenId", pedido.get("id"));
-            detalleRequest.put("productos", items);
-            detalleRequest.put("estado", "PENDIENTE");
-            
-            return cocinaWebClient.post()
-                .uri("/api/v1/detalles-produccion")
+                .uri("/detalles-produccion")
                 .bodyValue(detalleRequest)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
@@ -181,16 +198,67 @@ public class OrquestadorService {
                     resultado.put("timestamp", LocalDateTime.now());
                     return resultado;
                 });
-        })
-        .onErrorResume(error -> {
-            log.error("Error en flujo de pedido QR: {}", error.getMessage());
-            Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("error", error.getMessage());
-            errorResponse.put("timestamp", LocalDateTime.now());
-            return Mono.just(errorResponse);
-        });
-}
+    }
+
+    private UUID extractClienteId(Map<String, Object> cliente) {
+        Object id = cliente.get("id");
+        if (id instanceof UUID) {
+            return (UUID) id;
+        }
+        return UUID.fromString((String) id);
+    }
+
+    // ==================== OTROS ENDPOINTS ====================
+    
+    public Mono<Map<String, Object>> obtenerInfoMesaConPedidos(UUID sesionMesaId) {
+        // Obtener estado de la mesa desde sb-mesas
+        Mono<Map<String, Object>> mesaMono = mesasWebClient.get()
+                .uri("/api/mesas/{id}", sesionMesaId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+        
+        // Obtener pedidos activos desde sb-ventas
+        Mono<List<Map<String, Object>>> pedidosMono = ventasWebClient.get()
+                .uri("/pedidos/mesa/{sesionMesaId}/activos", sesionMesaId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+        
+        return Mono.zip(mesaMono, pedidosMono)
+                .map(tuple -> {
+                    Map<String, Object> resultado = new HashMap<>();
+                    resultado.put("mesa", tuple.getT1());
+                    resultado.put("pedidos_activos", tuple.getT2());
+                    resultado.put("total_pedidos", ((List) tuple.getT2()).size());
+                    return resultado;
+                });
+    }
+    public Mono<Map<String, Object>> obtenerPedido(UUID pedidoId) {
+        return ventasWebClient.get()
+                .uri("/pedidos/{pedidoId}", pedidoId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> actualizarEstadoPedido(UUID pedidoId, String estado) {
+        return ventasWebClient.patch()
+                .uri("/pedidos/{pedidoId}/estado?estado={estado}", pedidoId, estado)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> obtenerTotalAcumulado(UUID clienteId) {
+        return ventasWebClient.get()
+                .uri("/pedidos/cliente/{clienteId}", clienteId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .map(pedidos -> {
+                    double total = pedidos.stream()
+                            .filter(p -> !"CANCELADO".equals(p.get("estado")))
+                            .mapToDouble(p -> ((Number) p.get("total")).doubleValue())
+                            .sum();
+                    return Map.of("clienteId", clienteId, "total_acumulado", total);
+                });
+    }
     // ==================== FLUJO 2: CAMBIO DE ESTADO EN COCINA ====================
     
     public Mono<Map<String, Object>> flujoCambioEstadoCocina(UUID detalleId, String nuevoEstado, UUID usuarioId) {
@@ -312,46 +380,226 @@ public class OrquestadorService {
                 ));
             });
     }
+    // ==================== AUTH (USUARIOS) ====================
+
+
+    public Mono<Map<String, Object>> login(AuthLoginRequestDTO request) {
+        return usuariosWebClient.post()
+                .uri("/usuarios/login")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> listarUsuarios() {
+        return usuariosWebClient.get()
+                .uri("/usuarios")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> obtenerUsuario(String id) {
+        return usuariosWebClient.get()
+                .uri("/usuarios/{id}", id)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    // ==================== Clientes ====================
+
+    public Mono<Map<String, Object>> obtenerHistorialCliente(UUID clienteId) {
+    log.info("Obteniendo historial del cliente: {}", clienteId);
+    
+    // Paso 1: Obtener datos del cliente desde sb-clientes
+    Mono<Map<String, Object>> clienteMono = clientesWebClient.get()
+            .uri("/clientes/{id}", clienteId)
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    
+    // Paso 2: Obtener pedidos del cliente desde sb-ventas
+    Mono<List<Map<String, Object>>> pedidosMono = ventasWebClient.get()
+            .uri("/pedidos/cliente/{clienteId}", clienteId)
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+            .map(response -> {
+                // ✅ Extraer la lista del campo "data"
+                Object data = response.get("data");
+                if (data instanceof List) {
+                    return (List<Map<String, Object>>) data;
+                }
+                return List.of();
+            });
+    // Paso 3: Combinar ambas respuestas
+    return Mono.zip(clienteMono, pedidosMono)
+            .map(tuple -> {
+                Map<String, Object> resultado = new HashMap<>();
+                resultado.put("cliente", tuple.getT1());
+                resultado.put("historial_pedidos", tuple.getT2());
+                resultado.put("total_pedidos", ((List) tuple.getT2()).size());
+                resultado.put("timestamp", LocalDateTime.now());
+                return resultado;
+            })
+            .onErrorResume(error -> {
+                log.error("Error obteniendo historial: {}", error.getMessage());
+                return Mono.just(Map.of(
+                    "success", false,
+                    "error", "Error al obtener historial: " + error.getMessage()
+                ));
+            });
+    }
 
     // ==================== HEALTH CHECK ====================
-  public Mono<Map<String, Object>> healthCheck() {
-    Map<String, Object> health = new HashMap<>();
-    health.put("orquestador", "UP");
-    health.put("mensaje", "Orquestador funcionando correctamente");
-    health.put("timestamp", LocalDateTime.now());
-    
-    // Verificar cada servicio (opcional)
-    return Mono.zip(
-        checkService(usuariosWebClient, "usuarios", "/actuator/health"),
-        checkService(ventasWebClient, "ventas", "/actuator/health"),
-        checkService(cocinaWebClient, "cocina", "/actuator/health"),
-        checkService(inventarioWebClient, "inventario", "/actuator/health"),
-        checkService(finanzasWebClient, "finanzas", "/actuator/health")
-    ).map(tuple -> {
-        health.putAll(tuple.getT1());
-        health.putAll(tuple.getT2());
-        health.putAll(tuple.getT3());
-        health.putAll(tuple.getT4());
-        health.putAll(tuple.getT5());
-        return health;
-    }).onErrorReturn(health);
-}
+    public Mono<Map<String, Object>> healthCheck() {
+        Map<String, Object> health = new HashMap<>();
+        health.put("orquestador", "UP");
+        health.put("mensaje", "Orquestador funcionando correctamente");
+        health.put("timestamp", LocalDateTime.now());
+        
+        // Verificar cada servicio (opcional)
+        return Mono.zip(
+            checkService(usuariosWebClient, "usuarios", "/actuator/health"),
+            checkService(ventasWebClient, "ventas", "/actuator/health"),
+            checkService(cocinaWebClient, "cocina", "/actuator/health"),
+            checkService(inventarioWebClient, "inventario", "/actuator/health"),
+            checkService(finanzasWebClient, "finanzas", "/actuator/health")
+        ).map(tuple -> {
+            health.putAll(tuple.getT1());
+            health.putAll(tuple.getT2());
+            health.putAll(tuple.getT3());
+            health.putAll(tuple.getT4());
+            health.putAll(tuple.getT5());
+            return health;
+        }).onErrorReturn(health);
+    }
 
-// Método auxiliar corregido
-private Mono<Map<String, Object>> checkService(WebClient client, String name, String path) {
-    return client.get()
-        .uri(path)
-        .retrieve()
-        .bodyToMono(Map.class)
-        .map(r -> {
-            Map<String, Object> result = new HashMap<>();
-            result.put(name, "UP");
-            return result;
-        })
-        .onErrorResume(e -> {
-            Map<String, Object> result = new HashMap<>();
-            result.put(name, "DOWN");
-            return Mono.just(result);
-        });
-}
+    // Método auxiliar corregido
+    private Mono<Map<String, Object>> checkService(WebClient client, String name, String path) {
+        return client.get()
+            .uri(path)
+            .retrieve()
+            .bodyToMono(Map.class)
+            .map(r -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put(name, "UP");
+                return result;
+            })
+            .onErrorResume(e -> {
+                Map<String, Object> result = new HashMap<>();
+                result.put(name, "DOWN");
+                return Mono.just(result);
+            });
+    }
+
+    // ==================== INVENTARIO ====================
+
+    public Mono<List<Map<String, Object>>> listarInsumos() {
+        return inventarioWebClient.get()
+                .uri("/insumos")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+    }
+
+    public Mono<Map<String, Object>> consultarStock(UUID insumoId) {
+        return inventarioWebClient.get()
+                .uri("/insumos/stock/{id}", insumoId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<List<Map<String, Object>>> obtenerHistorialMovimientos(UUID insumoId) {
+        return inventarioWebClient.get()
+                .uri("/movimientos/{insumoId}", insumoId)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+    }
+
+    public Mono<List<Map<String, Object>>> obtenerAlertasStockBajo() {
+        return inventarioWebClient.get()
+                .uri("/alertas/stock-bajo")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+    }
+
+    // ==================== FINANZAS ====================
+
+    public Mono<Map<String, Object>> procesarPagoCompleto(PagoCompletoRequestDTO request) {
+        // Paso 1: Obtener pedido de sb-ventas
+        return ventasWebClient.get()
+                .uri("/pedidos/{pedidoId}", request.getPedidoId())
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+            .flatMap(pedido -> {
+                // Paso 2: Registrar pago en sb-finanzas
+                Map<String, Object> pagoRequest = new HashMap<>();
+                pagoRequest.put("pedidoId", request.getPedidoId());
+                pagoRequest.put("monto", pedido.get("total"));
+                pagoRequest.put("metodoPago", request.getMetodoPago());
+                
+                return finanzasWebClient.post()
+                        .uri("/pagos")
+                        .bodyValue(pagoRequest)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+            })
+            .flatMap(pago -> {
+                // Paso 3: Generar comprobante (RN-004: factura si monto > 700)
+                Double monto = (Double) pago.get("monto");
+                String tipoComprobante = monto > 700 ? "FACTURA" : "BOLETA";
+                
+                Map<String, Object> comprobanteRequest = new HashMap<>();
+                comprobanteRequest.put("pagoId", pago.get("id"));
+                comprobanteRequest.put("tipo", tipoComprobante);
+                
+                return finanzasWebClient.post()
+                        .uri("/comprobantes")
+                        .bodyValue(comprobanteRequest)
+                        .retrieve()
+                        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+            })
+            .flatMap(comprobante -> {
+                // Paso 4: Liberar mesa en sb-mesas
+                return mesasWebClient.put()
+                        .uri("/api/mesas/{id}/liberar", request.getMesaId())
+                        .retrieve()
+                        .toBodilessEntity()
+                        .thenReturn(comprobante);
+            })
+            .map(comprobante -> {
+                Map<String, Object> resultado = new HashMap<>();
+                resultado.put("success", true);
+                resultado.put("mensaje", "Pago procesado y mesa liberada");
+                resultado.put("comprobante", comprobante);
+                return resultado;
+            });
+    }
+
+    public Mono<Map<String, Object>> obtenerEstadoCaja() {
+        return finanzasWebClient.get()
+                .uri("/caja/estado")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> abrirCaja(AperturaCajaRequestDTO request) {
+        return finanzasWebClient.post()
+                .uri("/caja/apertura")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> cerrarCaja(CierreCajaRequestDTO request) {
+        return finanzasWebClient.post()
+                .uri("/caja/cierre")
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
+
+    public Mono<Map<String, Object>> obtenerReporteVentasDiario(String fecha) {
+        return finanzasWebClient.get()
+                .uri("/reportes/ventas/diario?fecha={fecha}", fecha)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+    }
 }

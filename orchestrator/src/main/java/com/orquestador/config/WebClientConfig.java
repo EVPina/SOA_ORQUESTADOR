@@ -11,25 +11,25 @@ public class WebClientConfig {
     @Value("${servicios.usuarios.url:http://localhost:8081}")
     private String usuariosUrl;
 
-    @Value("${servicios.ventas.url:http://localhost:8085}")
+    @Value("${servicios.ventas.url:http://localhost:8085/api/v1}")
     private String ventasUrl;
 
     @Value("${servicios.cocina.url:http://localhost:8086}")
     private String cocinaUrl;
 
-    @Value("${servicios.inventario.url:http://localhost:8087}")
+    @Value("${servicios.inventario.url:http://localhost:8087/api/v1}")
     private String inventarioUrl;
 
-    @Value("${servicios.finanzas.url:http://localhost:8088}")
+    @Value("${servicios.finanzas.url:http://localhost:8088/api/v1}")
     private String finanzasUrl;
 
     @Value("${servicios.qr.url:http://localhost:8084}")
     private String qrUrl;
 
-    @Value("${servicios.mesas.url:http://localhost:8083}")
+    @Value("${servicios.mesas.url:http://localhost:8083/api}")
     private String mesasUrl;
 
-    @Value("${servicios.clientes.url:http://localhost:8082}")
+    @Value("${servicios.clientes.url:http://localhost:8082/api}")
     private String clientesUrl;
 
     @Bean
