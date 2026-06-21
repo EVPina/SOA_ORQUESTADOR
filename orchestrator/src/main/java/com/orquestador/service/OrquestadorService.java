@@ -719,4 +719,20 @@ public class OrquestadorService {
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
+
+    // ==================== COCINA - CONSULTAS ====================
+
+    public Mono<List<Map<String, Object>>> getOrdenesActivas() {
+        return cocinaWebClient.get()
+                .uri("/ordenes-produccion/activas")
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+    }
+
+    public Mono<List<Map<String, Object>>> getOrdenesPorEstado(String estado) {
+        return cocinaWebClient.get()
+                .uri("/ordenes-produccion/por-estado/{estado}", estado)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+    }
 }

@@ -82,6 +82,32 @@ public class OrquestadorController {
             });
     }
 
+    // ==================== COCINA - CONSULTAS ====================
+
+    @GetMapping("/cocina/ordenes/activas")
+    public Mono<ResponseEntity<ApiResponseDTO<Object>>> getOrdenesActivas() {
+        return orquestadorService.getOrdenesActivas()
+            .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Órdenes activas", response)));
+    }
+
+    @GetMapping("/cocina/ordenes/pendientes")
+    public Mono<ResponseEntity<ApiResponseDTO<Object>>> getOrdenesPendientes() {
+        return orquestadorService.getOrdenesPorEstado("PENDIENTE")
+            .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Órdenes pendientes", response)));
+    }
+
+    @GetMapping("/cocina/ordenes/preparando")
+    public Mono<ResponseEntity<ApiResponseDTO<Object>>> getOrdenesPreparando() {
+        return orquestadorService.getOrdenesPorEstado("PREPARANDO")
+            .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Órdenes en preparación", response)));
+    }
+
+    @GetMapping("/cocina/ordenes/listos")
+    public Mono<ResponseEntity<ApiResponseDTO<Object>>> getOrdenesListos() {
+        return orquestadorService.getOrdenesPorEstado("LISTO")
+            .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Órdenes listas", response)));
+    }
+
     // ==================== HEALTH CHECK ====================
     
     @GetMapping("/health")
