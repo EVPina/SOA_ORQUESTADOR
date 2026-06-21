@@ -63,14 +63,14 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SERVICE_USUARIOS_URL=http://servicio-usuarios:8081
-      - SERVICE_CLIENTES_URL=http://servicio-clientes:8082
-      - SERVICE_MESAS_URL=http://servicio-mesas:8083
-      - SERVICE_QR_URL=http://servicio-qr:8084/api
-      - SERVICE_VENTAS_URL=http://servicio-ventas:8085
-      - SERVICE_COCINA_URL=http://servicio-cocina:8086
-      - SERVICE_INVENTARIO_URL=http://servicio-inventario:8087
-      - SERVICE_FINANZAS_URL=http://servicio-finanzas:8088     # <<--- NUEVA
+      - SERVICE_USUARIOS_URL=http://servicio-usuarios:8081/api/v1
+      - SERVICE_CLIENTES_URL=http://servicio-clientes:8082/api/v1
+      - SERVICE_MESAS_URL=http://servicio-mesas:8083/api/v1
+      - SERVICE_QR_URL=http://servicio-qr:8084/api/v1
+      - SERVICE_VENTAS_URL=http://servicio-ventas:8085/api/v1
+      - SERVICE_COCINA_URL=http://servicio-cocina:8086/api/v1
+      - SERVICE_INVENTARIO_URL=http://servicio-inventario:8087/api/v1
+      - SERVICE_FINANZAS_URL=http://servicio-finanzas:8088/api/v1   # <<--- NUEVA
     networks:
       - soa-network
 

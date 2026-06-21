@@ -1,5 +1,5 @@
 package com.orquestador.service;
-
+import org.springframework.http.MediaType;
 import com.orquestador.dto.PedidoRequestDTO;
 import com.orquestador.dto.AperturaCajaRequestDTO;
 import com.orquestador.dto.AuthLoginRequestDTO;
@@ -9,9 +9,9 @@ import com.orquestador.dto.PagoRequestDTO;
 import com.orquestador.dto.PedidoMozoRequestDTO;
 import com.orquestador.dto.PedidoQRRequestDTO;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -25,11 +25,37 @@ import java.util.Map;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class OrquestadorService {
 
-    private final WebClient usuariosWebClient, ventasWebClient, cocinaWebClient, inventarioWebClient, finanzasWebClient, clientesWebClient,mesasWebClient;
+    private final WebClient usuariosWebClient;
+    private final WebClient ventasWebClient;
+    private final WebClient cocinaWebClient;
+    private final WebClient inventarioWebClient;
+    private final WebClient finanzasWebClient;
+    private final WebClient clientesWebClient;
+    private final WebClient mesasWebClient;
+    private final WebClient qrWebClient;
+
+     public OrquestadorService(
+        @Qualifier("usuariosWebClient") WebClient usuariosWebClient,
+        @Qualifier("ventasWebClient") WebClient ventasWebClient,
+        @Qualifier("cocinaWebClient") WebClient cocinaWebClient,
+        @Qualifier("inventarioWebClient") WebClient inventarioWebClient,
+        @Qualifier("finanzasWebClient") WebClient finanzasWebClient,
+        @Qualifier("clientesWebClient") WebClient clientesWebClient,
+        @Qualifier("mesasWebClient") WebClient mesasWebClient,
+        @Qualifier("qrWebClient") WebClient qrWebClient
+    ) {
+        this.usuariosWebClient = usuariosWebClient;
+        this.ventasWebClient = ventasWebClient;
+        this.cocinaWebClient = cocinaWebClient;
+        this.inventarioWebClient = inventarioWebClient;
+        this.finanzasWebClient = finanzasWebClient;
+        this.clientesWebClient = clientesWebClient;
+        this.mesasWebClient = mesasWebClient;
+        this.qrWebClient = qrWebClient;
+    }
 
      // ==================== FLUJO PEDIDO QR ====================
     
@@ -61,7 +87,7 @@ public class OrquestadorService {
         log.info("Procesando pedido asistido por mozo para mesa: {}", request.getMesaId());
         
         return clientesWebClient.get()
-                .uri("/api/clientes/{id}", request.getClienteId())
+                .uri("/clientes/{id}", request.getClienteId())
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
             .flatMap(cliente -> ocuparMesa(request.getMesaId()).thenReturn(cliente))
@@ -90,7 +116,7 @@ public class OrquestadorService {
         }
         
         return clientesWebClient.get()
-                .uri("/api/clientes/buscar?valor={email}", email)
+                .uri("/clientes/buscar?valor={email}", email)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                 .onErrorResume(error -> {
@@ -100,7 +126,7 @@ public class OrquestadorService {
                     nuevoCliente.put("telefono", telefono);
                     nuevoCliente.put("password", "123456");
                     return clientesWebClient.post()
-                            .uri("/api/clientes/registro")
+                            .uri("/clientes/registro")
                             .bodyValue(nuevoCliente)
                             .retrieve()
                             .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
@@ -136,9 +162,16 @@ public class OrquestadorService {
                             .retrieve()
                             .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
                             .doOnNext(response -> {
-                                Boolean disponible = (Boolean) response.get("disponible");
+                                log.info("Respuesta inventario: {}", response);  // ← Ver qué devuelve
+                                Boolean disponible = (Boolean) response.getOrDefault("exito", false);
+                                // También puede venir como "disponible"
+                                if (response.containsKey("disponible")) {
+                                    disponible = (Boolean) response.get("disponible");
+                                }
+                                
                                 if (!Boolean.TRUE.equals(disponible)) {
-                                    throw new RuntimeException("Stock insuficiente para: " + productoId);
+                                    String mensaje = (String) response.getOrDefault("mensaje", "Stock insuficiente");
+                                    throw new RuntimeException(mensaje + " para producto: " + productoId);
                                 }
                             });
                 })
@@ -157,7 +190,8 @@ public class OrquestadorService {
                 .uri("/pedidos")
                 .bodyValue(pedidoRequest)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .doOnNext(respuesta -> log.info("Respuesta de ventas: {}", respuesta));
     }
 
     private Mono<Map<String, Object>> crearPedidoEnVentasMozo(PedidoMozoRequestDTO request) {
@@ -177,27 +211,110 @@ public class OrquestadorService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
-    private Mono<Map<String, Object>> enviarOrdenACocina(Map<String, Object> pedido, List<Map<String, Object>> items) {
-        Map<String, Object> detalleRequest = new HashMap<>();
-        detalleRequest.put("ordenId", pedido.get("id"));
-        detalleRequest.put("productos", items);
-        detalleRequest.put("estado", "PENDIENTE");
+  private Mono<Map<String, Object>> enviarOrdenACocina(Map<String, Object> pedido, List<Map<String, Object>> items) {
+     // Extraer el objeto "data" que contiene la información del pedido
+    Map<String, Object> data = (Map<String, Object>) pedido.get("data");
+    if (data == null) {
+        // Si la respuesta no tiene "data", asumimos que el mapa es directo (fallback)
+        data = pedido;
+    }
+
+    Object pedidoIdObj = data.get("id");
+    if (pedidoIdObj == null) {
+        log.error("No se pudo extraer el ID del pedido. Respuesta de ventas: {}", pedido);
+        return Mono.error(new RuntimeException("El pedido no tiene ID"));
+    }
+    UUID pedidoId = UUID.fromString(pedidoIdObj.toString());
+
+    // Crear la orden con el ID extraído
+    Map<String, Object> ordenRequest = new HashMap<>();
+    ordenRequest.put("pedidoId", pedidoId);
+    ordenRequest.put("mesaNumero", obtenerMesaNumero(pedido));
+    ordenRequest.put("usuarioJefeId", "33a675b7-b35e-4fe2-b101-49884c44e38b");
+
+    log.info("Creando orden de producción para pedido: {}", pedidoId);
+    
+    return cocinaWebClient.post()
+            .uri("/ordenes-produccion")
+            .contentType(MediaType.APPLICATION_JSON)
+            .bodyValue(ordenRequest)
+            .retrieve()
+            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+            .flatMap(orden -> {
+                // 2. Obtener el ID de la orden creada
+                Object ordenId = orden.get("id");
+                log.info("Orden creada con ID: {}", ordenId);
+                
+                // 3. Crear los detalles usando el ID de la orden
+                return Flux.fromIterable(items)
+                    .flatMap(item -> {
+                        String productoNombre = (String) item.get("nombre");
+                        if (productoNombre == null) {
+                            productoNombre = (String) item.get("productoNombre");
+                        }
+                        if (productoNombre == null) {
+                            productoNombre = "Producto sin nombre";
+                        }
+                        
+                        Integer cantidad = (Integer) item.get("cantidad");
+                        
+                        Map<String, Object> detalleRequest = new HashMap<>();
+                        detalleRequest.put("ordenId", ordenId);
+                        detalleRequest.put("productoNombre", productoNombre);
+                        detalleRequest.put("cantidad", cantidad);
+                        detalleRequest.put("estado", "PENDIENTE");
+                        
+                        log.info("Creando detalle: producto={}, cantidad={}", productoNombre, cantidad);
+                        
+                        return cocinaWebClient.post()
+                                .uri("/detalles-produccion")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .bodyValue(detalleRequest)
+                                .retrieve()
+                                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+                    })
+                    .collectList()
+                    .map(respuestas -> {
+                        String primerDetalleId = (String) respuestas.get(0).get("id");
+                        
+                        Map<String, Object> resultado = new HashMap<>();
+                        resultado.put("success", true);
+                        resultado.put("pedidoId", pedido.get("id"));
+                        resultado.put("ordenId", ordenId);
+                        resultado.put("detalleId", primerDetalleId);
+                        resultado.put("totalDetalles", respuestas.size());
+                        resultado.put("mensaje", "Orden y detalles creados (" + respuestas.size() + " productos)");
+                        resultado.put("tiempoEstimado", calcularTiempoEstimado(items));
+                        resultado.put("timestamp", LocalDateTime.now());
+                        return resultado;
+                    });
+            })
+            .onErrorResume(error -> {
+                log.error("Error al crear orden en cocina: {}", error.getMessage());
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("error", error.getMessage());
+                return Mono.just(errorResponse);
+            });
+}
+
+    // Método auxiliar para obtener el número de mesa
+    private Integer obtenerMesaNumero(Map<String, Object> pedido) {
+        Object sesionMesaId = pedido.get("sesionMesaId");
+        // Por ahora retorna 1, idealmente deberías obtener el número de mesa de sb-mesas
+        return 1;
+    }
+    // Método auxiliar para calcular tiempo estimado basado en cantidad de productos
+    private String calcularTiempoEstimado(List<Map<String, Object>> items) {
+        int totalProductos = items.stream()
+            .mapToInt(item -> (Integer) item.getOrDefault("cantidad", 0))
+            .sum();
         
-        return cocinaWebClient.post()
-                .uri("/detalles-produccion")
-                .bodyValue(detalleRequest)
-                .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
-                .map(respuesta -> {
-                    Map<String, Object> resultado = new HashMap<>();
-                    resultado.put("success", true);
-                    resultado.put("pedidoId", pedido.get("id"));
-                    resultado.put("detalleId", respuesta.get("id"));
-                    resultado.put("mensaje", "Pedido enviado a cocina");
-                    resultado.put("tiempoEstimado", "25 minutos");
-                    resultado.put("timestamp", LocalDateTime.now());
-                    return resultado;
-                });
+        int minutosBase = 25;
+        int minutosExtra = (totalProductos - 1) * 5;
+        int totalMinutos = minutosBase + minutosExtra;
+        
+        return totalMinutos + " minutos";
     }
 
     private UUID extractClienteId(Map<String, Object> cliente) {
@@ -213,7 +330,7 @@ public class OrquestadorService {
     public Mono<Map<String, Object>> obtenerInfoMesaConPedidos(UUID sesionMesaId) {
         // Obtener estado de la mesa desde sb-mesas
         Mono<Map<String, Object>> mesaMono = mesasWebClient.get()
-                .uri("/api/mesas/{id}", sesionMesaId)
+                .uri("/mesas/{id}", sesionMesaId)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
         
@@ -265,7 +382,7 @@ public class OrquestadorService {
         log.info("Cambiando estado de detalle {} a {}", detalleId, nuevoEstado);
         
         return cocinaWebClient.patch()
-            .uri("/api/v1/detalles-produccion/{detalleId}/estado", detalleId)
+            .uri("/detalles-produccion/{detalleId}/estado", detalleId)
             .bodyValue(Map.of("nuevoEstado", nuevoEstado, "usuarioId", usuarioId))
             .retrieve()
             .bodyToMono(Map.class)
@@ -275,7 +392,7 @@ public class OrquestadorService {
                 
                 // Actualizar estado del pedido en ventas
                 return ventasWebClient.patch()
-                    .uri("/api/v1/pedidos/{id}/estado", ordenId)
+                    .uri("/pedidos/{id}/estado", ordenId)
                     .bodyValue(Map.of("estado", nuevoEstado))
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -283,7 +400,7 @@ public class OrquestadorService {
                         // Si está LISTO, descontar stock
                         if ("LISTO".equals(nuevoEstado)) {
                             return inventarioWebClient.post()
-                                .uri("/api/v1/produccion/producir")
+                                .uri("/produccion/producir")
                                 .bodyValue(Map.of("pedidoId", ordenId))
                                 .retrieve()
                                 .bodyToMono(Map.class)
@@ -319,7 +436,7 @@ public class OrquestadorService {
         log.info("Procesando pago para pedido: {}", request.getPedidoId());
         
         return ventasWebClient.get()
-            .uri("/api/v1/pedidos/{id}", request.getPedidoId())
+            .uri("/pedidos/{id}", request.getPedidoId())
             .retrieve()
             .bodyToMono(Map.class)
             .flatMap(pedido -> {
@@ -331,7 +448,7 @@ public class OrquestadorService {
                 pagoRequest.put("referencia", request.getReferencia());
                 
                 return ventasWebClient.post()
-                    .uri("/api/v1/pagos")
+                    .uri("/pagos")
                     .bodyValue(pagoRequest)
                     .retrieve()
                     .bodyToMono(Map.class)
@@ -342,7 +459,7 @@ public class OrquestadorService {
                         comprobanteRequest.put("pedidoId", request.getPedidoId());
                         
                         return ventasWebClient.post()
-                            .uri("/api/v1/comprobantes")
+                            .uri("/comprobantes")
                             .bodyValue(comprobanteRequest)
                             .retrieve()
                             .bodyToMono(Map.class)
@@ -559,7 +676,7 @@ public class OrquestadorService {
             .flatMap(comprobante -> {
                 // Paso 4: Liberar mesa en sb-mesas
                 return mesasWebClient.put()
-                        .uri("/api/mesas/{id}/liberar", request.getMesaId())
+                        .uri("/mesas/{id}/liberar", request.getMesaId())
                         .retrieve()
                         .toBodilessEntity()
                         .thenReturn(comprobante);

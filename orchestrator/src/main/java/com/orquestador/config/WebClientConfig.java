@@ -8,43 +8,35 @@ import org.springframework.web.reactive.function.client.WebClient;
 @Configuration
 public class WebClientConfig {
 
-    @Value("${servicios.usuarios.url:http://localhost:8081}")
+   // ✅ Usar las propiedades de application.yml directamente
+    @Value("${servicios.usuarios.url}")
     private String usuariosUrl;
 
-    @Value("${servicios.ventas.url:http://localhost:8085/api/v1}")
+    @Value("${servicios.ventas.url}")
     private String ventasUrl;
 
-    @Value("${servicios.cocina.url:http://localhost:8086}")
+    @Value("${servicios.cocina.url}")
     private String cocinaUrl;
 
-    @Value("${servicios.inventario.url:http://localhost:8087/api/v1}")
+    @Value("${servicios.inventario.url}")
     private String inventarioUrl;
 
-    @Value("${servicios.finanzas.url:http://localhost:8088/api/v1}")
+    @Value("${servicios.finanzas.url}")
     private String finanzasUrl;
 
-    @Value("${servicios.qr.url:http://localhost:8084}")
+    @Value("${servicios.qr.url}")
     private String qrUrl;
 
-    @Value("${servicios.mesas.url:http://localhost:8083/api}")
+    @Value("${servicios.mesas.url}")
     private String mesasUrl;
 
-    @Value("${servicios.clientes.url:http://localhost:8082/api}")
+    @Value("${servicios.clientes.url}")
     private String clientesUrl;
 
     @Bean
     public WebClient usuariosWebClient() {
         return WebClient.builder()
                 .baseUrl(usuariosUrl)
-                .defaultHeader("Content-Type", "application/json")
-                .build();
-    }
-
-    @Bean
-    public WebClient ventasWebClient() {
-        return WebClient.builder()
-                .baseUrl(ventasUrl)
-                .defaultHeader("Content-Type", "application/json")
                 .build();
     }
 
@@ -90,6 +82,13 @@ public class WebClientConfig {
     public WebClient clientesWebClient() {
         return WebClient.builder()
                 .baseUrl(clientesUrl)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+    }
+    @Bean
+    public WebClient ventasWebClient() {
+        return WebClient.builder()
+                .baseUrl(ventasUrl)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }
