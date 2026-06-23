@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import org.springframework.core.ParameterizedTypeReference;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -296,26 +297,47 @@ public class OrquestadorService {
     // ==================== OTROS ENDPOINTS ====================
 
     public Mono<Map<String, Object>> obtenerInfoMesaConPedidos(UUID sesionMesaId) {
+        // Obtener estado de la mesa desde sb-mesas
         Mono<Map<String, Object>> mesaMono = mesasWebClient.get()
                 .uri("/mesas/{id}", sesionMesaId)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .onErrorResume(e -> {
+                    log.error("Error al obtener mesa: {}", e.getMessage());
+                    return Mono.just(Map.of("error", "No se pudo obtener la mesa"));
+                });
 
-        Mono<List<Map<String, Object>>> pedidosMono = ventasWebClient.get()
+        // Obtener pedidos activos desde sb-ventas (respuesta envuelta en ApiResponse)
+        Mono<List<? extends Object>> pedidosMono = ventasWebClient.get()
                 .uri("/pedidos/mesa/{sesionMesaId}/activos", sesionMesaId)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .map(response -> {
+                    // Extraer la lista del campo "data"
+                    Object data = response.get("data");
+                    if (data instanceof List) {
+                        // Cast seguro a List<Map<String, Object>>
+                        @SuppressWarnings("unchecked")
+                        List<Map<String, Object>> lista = (List<Map<String, Object>>) data;
+                        return lista;
+                    }
+                    log.warn("La respuesta no contiene una lista en 'data': {}", response);
+                    return List.of();
+                })
+                .onErrorResume(e -> {
+                    log.error("Error al obtener pedidos: {}", e.getMessage());
+                    return Mono.just(List.of());
+                });
 
         return Mono.zip(mesaMono, pedidosMono)
                 .map(tuple -> {
                     Map<String, Object> resultado = new HashMap<>();
                     resultado.put("mesa", tuple.getT1());
                     resultado.put("pedidos_activos", tuple.getT2());
-                    resultado.put("total_pedidos", ((List) tuple.getT2()).size());
+                    resultado.put("total_pedidos", tuple.getT2().size());
                     return resultado;
                 });
     }
-
     public Mono<Map<String, Object>> obtenerPedido(UUID pedidoId) {
         return ventasWebClient.get()
                 .uri("/pedidos/{pedidoId}", pedidoId)
@@ -576,8 +598,79 @@ public class OrquestadorService {
     // ==================== FINANZAS ====================
 
     public Mono<Map<String, Object>> procesarPagoCompleto(PagoCompletoRequestDTO request) {
-        // ... (sin cambios)
-        return Mono.just(Map.of());
+    log.info("Procesando pago para pedido: {}", request.getPedidoId());
+
+    // 1. Obtener el pedido desde Ventas
+    return ventasWebClient.get()
+        .uri("/pedidos/{id}", request.getPedidoId())
+        .retrieve()
+        .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+        .flatMap(pedidoRespuesta -> {
+            // Extraer el total
+            Map<String, Object> data = (Map<String, Object>) pedidoRespuesta.get("data");
+            if (data == null) data = pedidoRespuesta;
+            Object totalObj = data.get("total");
+            Double total = totalObj instanceof Number ? ((Number) totalObj).doubleValue() : 0.0;
+
+            // 2. Registrar pago en Finanzas
+            Map<String, Object> pagoRequest = new HashMap<>();
+            pagoRequest.put("pedidoId", request.getPedidoId());
+            pagoRequest.put("monto", total);
+            pagoRequest.put("metodoPago", request.getMetodoPago());
+            pagoRequest.put("referencia", request.getReferencia());
+
+            log.info("Registrando pago en finanzas: {}", pagoRequest);
+
+            return finanzasWebClient.post()
+                    .uri("/pagos")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(pagoRequest)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                    .doOnSuccess(resp -> log.info("Pago registrado: {}", resp))
+                    .doOnError(e -> log.error("Error en finanzas: {}", e.getMessage()));
+        })
+        .flatMap(pago -> {
+            // 3. Generar comprobante
+            Double monto = (Double) pago.get("monto");
+            String tipoComprobante = (monto != null && monto > 700) ? "FACTURA" : "BOLETA";
+
+            Map<String, Object> comprobanteRequest = new HashMap<>();
+            comprobanteRequest.put("pagoId", pago.get("id"));
+            comprobanteRequest.put("tipo", tipoComprobante);
+
+            log.info("Generando comprobante: {}", comprobanteRequest);
+
+            return finanzasWebClient.post()
+                    .uri("/comprobantes")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .bodyValue(comprobanteRequest)
+                    .retrieve()
+                    .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+        })
+        .flatMap(comprobante -> {
+            // 4. Liberar mesa
+            log.info("Liberando mesa: {}", request.getMesaId());
+            return mesasWebClient.put()
+                    .uri("/mesas/{id}/liberar", request.getMesaId())
+                    .retrieve()
+                    .toBodilessEntity()
+                    .thenReturn(comprobante);
+        })
+        .map(comprobante -> {
+            Map<String, Object> resultado = new HashMap<>();
+            resultado.put("success", true);
+            resultado.put("mensaje", "Pago procesado y mesa liberada");
+            resultado.put("comprobante", comprobante);
+            return resultado;
+        })
+        .onErrorResume(error -> {
+            log.error("Error en procesamiento de pago: {}", error.getMessage());
+            return Mono.just(Map.of(
+                    "success", false,
+                    "error", error.getMessage()
+            ));
+        });
     }
 
     public Mono<Map<String, Object>> obtenerEstadoCaja() {
