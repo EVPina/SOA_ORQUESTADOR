@@ -688,9 +688,9 @@ public class OrquestadorService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
-    public Mono<Map<String, Object>> cerrarCaja(CierreCajaRequestDTO request) {
-        return finanzasWebClient.post()
-                .uri("/caja/cierre")
+    public Mono<Map<String, Object>> cerrarCaja(UUID cajaId, CierreCajaRequestDTO request) {
+    return finanzasWebClient.put()
+                .uri("/cajas/cierre/{cajaId}", cajaId)   // ← PUT con cajaId
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});

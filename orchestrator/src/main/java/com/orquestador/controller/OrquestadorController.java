@@ -187,9 +187,11 @@ public class OrquestadorController {
                 .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Caja abierta", response)));
     }
 
-    @PostMapping("/caja/cierre")
-    public Mono<ResponseEntity<ApiResponseDTO<Object>>> cerrarCaja(@RequestBody CierreCajaRequestDTO request) {
-        return orquestadorService.cerrarCaja(request)
+    @PutMapping("/caja/cierre/{cajaId}")
+    public Mono<ResponseEntity<ApiResponseDTO<Object>>> cerrarCaja(
+        @PathVariable UUID cajaId,
+        @RequestBody CierreCajaRequestDTO request) {
+    return orquestadorService.cerrarCaja(cajaId, request)
                 .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Caja cerrada", response)));
     }
 
