@@ -531,7 +531,7 @@ public class OrquestadorService {
 
     public Mono<Map<String, Object>> login(AuthLoginRequestDTO request) {
         return usuariosWebClient.post()
-                .uri("/usuarios/login")
+                .uri("/auth/login")
                 .bodyValue(request)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
