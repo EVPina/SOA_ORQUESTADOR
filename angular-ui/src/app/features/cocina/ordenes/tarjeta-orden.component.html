@@ -1,0 +1,73 @@
+<div
+  class="bg-white rounded-xl shadow-md border-l-4 overflow-hidden transition-all hover:shadow-lg"
+  [class.border-[#B71C1C]]="orden().estado === 'PENDIENTE'"
+  [class.border-[#D4A017]]="orden().estado === 'PREPARANDO'"
+  [class.border-green-500]="orden().estado === 'LISTO'"
+  [class.border-gray-400]="orden().estado === 'ENTREGADO'"
+>
+  <div class="p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <app-numero-mesa [numero]="orden().mesaNumero" />
+        @if (orden().clienteNombre) {
+          <span class="text-xs font-medium text-[#2E221B]/80">• {{ orden().clienteNombre }}</span>
+        }
+      </div>
+      <app-indicador-estado [estado]="orden().estado" />
+    </div>
+
+    <div class="text-xs text-[#2E221B]/70 flex items-center gap-2">
+      <span>{{ orden().createdAt | date:'HH:mm' }}</span>
+      @if (orden().estado === 'PREPARANDO') {
+        <span class="w-1 h-1 rounded-full bg-[#2E221B]/30"></span>
+        <span class="font-mono text-yellow-700">⏱ {{ tiempoTranscurrido() }}</span>
+      }
+      <span class="w-1 h-1 rounded-full bg-[#2E221B]/30"></span>
+      <span>{{ orden().totalItems }} ítems</span>
+      @if (orden().itemsListos > 0) {
+        <span class="w-1 h-1 rounded-full bg-[#2E221B]/30"></span>
+        <span class="text-green-600">{{ orden().itemsListos }}/{{ orden().totalItems }} listos</span>
+      }
+    </div>
+
+    <div class="flex flex-col gap-1.5">
+      @for (detalle of orden().detalles; track detalle.id) {
+        <div
+          class="flex items-center justify-between text-sm px-2 py-1 rounded"
+          [class.bg-green-50]="detalle.estado === 'LISTO'"
+          [class.bg-yellow-50]="detalle.estado === 'PREPARANDO'"
+        >
+          <span class="text-[#2E221B]">
+            <span class="font-semibold">{{ detalle.cantidad }}x</span>
+            {{ detalle.productoNombre }}
+          </span>
+          <span
+            class="text-[10px] font-medium uppercase px-1.5 py-0.5 rounded"
+            [class.text-red-600]="detalle.estado === 'PENDIENTE'"
+            [class.text-yellow-600]="detalle.estado === 'PREPARANDO'"
+            [class.text-green-600]="detalle.estado === 'LISTO'"
+          >
+            {{ detalle.estado }}
+          </span>
+        </div>
+      }
+    </div>
+
+    @if (orden().estado !== 'ENTREGADO') {
+      <button
+        (click)="avanzarEstado()"
+        class="w-full py-2 rounded-lg text-white font-semibold text-sm transition-colors"
+        [class.bg-[#B71C1C]]="orden().estado === 'PENDIENTE'"
+        [class.hover:bg-red-800]="orden().estado === 'PENDIENTE'"
+        [class.bg-[#D4A017]]="orden().estado === 'PREPARANDO'"
+        [class.hover:bg-yellow-600]="orden().estado === 'PREPARANDO'"
+        [class.bg-green-600]="orden().estado === 'LISTO'"
+        [class.hover:bg-green-700]="orden().estado === 'LISTO'"
+      >
+        @if (orden().estado === 'PENDIENTE') { Iniciar Preparación }
+        @else if (orden().estado === 'PREPARANDO') { Marcar como Listo }
+        @else if (orden().estado === 'LISTO') { Marcar como Entregado }
+      </button>
+    }
+  </div>
+</div>

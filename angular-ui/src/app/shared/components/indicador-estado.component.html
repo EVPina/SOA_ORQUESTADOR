@@ -1,0 +1,20 @@
+<span
+  class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider px-2.5 py-1 rounded-full"
+  [class.bg-red-100]="estado() === 'PENDIENTE'"
+  [class.text-[#B71C1C]]="estado() === 'PENDIENTE'"
+  [class.bg-yellow-100]="estado() === 'PREPARANDO'"
+  [class.text-yellow-700]="estado() === 'PREPARANDO'"
+  [class.bg-green-100]="estado() === 'LISTO'"
+  [class.text-green-700]="estado() === 'LISTO'"
+  [class.bg-gray-100]="estado() === 'ENTREGADO'"
+    [class.text-gray-600]="estado() === 'ENTREGADO'"
+>
+  <span
+    class="w-2 h-2 rounded-full"
+    [class.bg-[#B71C1C]]="estado() === 'PENDIENTE'"
+    [class.bg-yellow-500]="estado() === 'PREPARANDO'"
+    [class.bg-green-500]="estado() === 'LISTO'"
+    [class.bg-gray-400]="estado() === 'ENTREGADO'"
+  ></span>
+  {{ estado() }}
+</span>

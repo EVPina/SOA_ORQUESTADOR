@@ -1,0 +1,18 @@
+<div class="flex gap-3 text-sm">
+  <div class="bg-[#2E221B]/80 px-3 py-1.5 rounded-lg text-center min-w-[70px]">
+    <div class="text-2xl font-bold text-white">{{ stats().ordenesPendientes }}</div>
+    <div class="text-[#F8F7F2]/80 text-[10px] uppercase tracking-wider">Pendientes</div>
+  </div>
+  <div class="bg-[#2E221B]/80 px-3 py-1.5 rounded-lg text-center min-w-[70px]">
+    <div class="text-2xl font-bold text-amber-300">{{ stats().ordenesPreparando }}</div>
+    <div class="text-[#F8F7F2]/80 text-[10px] uppercase tracking-wider">Preparando</div>
+  </div>
+  <div class="bg-[#2E221B]/80 px-3 py-1.5 rounded-lg text-center min-w-[70px]">
+    <div class="text-2xl font-bold text-green-300">{{ stats().ordenesListas }}</div>
+    <div class="text-[#F8F7F2]/80 text-[10px] uppercase tracking-wider">Listos</div>
+  </div>
+  <div class="bg-[#2E221B]/80 px-3 py-1.5 rounded-lg text-center min-w-[70px]">
+    <div class="text-2xl font-bold text-gray-300">{{ stats().ordenesEntregadas }}</div>
+    <div class="text-[#F8F7F2]/80 text-[10px] uppercase tracking-wider">Hoy</div>
+  </div>
+</div>

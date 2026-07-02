@@ -1,0 +1,95 @@
+<div class="h-dvh w-full bg-[#F8F7F2] flex">
+
+  <!-- Sidebar (Navbar lateral modular) -->
+  <app-sidebar />
+
+  <!-- Contenido Principal -->
+  <div class="flex-1 flex flex-col overflow-hidden bg-[#F8F7F2]">
+    <!-- Header (Solo stats y reloj) -->
+    <header
+      class="bg-white border-b border-gray-200 px-8 py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
+      <div>
+        <h2 class="text-xl font-bold text-gray-800 tracking-tight">Panel de Control</h2>
+        <p class="text-sm text-gray-500 font-medium mt-0.5">Gestión de cocina</p>
+      </div>
+      <div class="flex items-center gap-8">
+        <app-resumen-dashboard [stats]="stats()" />
+        <div
+          class="bg-red-50 text-red-900 px-4 py-2 rounded-xl border border-red-100 font-mono text-lg font-bold tracking-wider shadow-inner flex items-center gap-2">
+          <svg class="w-5 h-5 text-red-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          {{ horaActual() | date:'hh:mm:ss a' }}
+        </div>
+      </div>
+    </header>
+
+    <!-- Área escroleable de contenido -->
+    <main class="flex-1 overflow-auto p-8 relative">
+      <!-- Fondo decorativo -->
+      <div class="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style="background-image: radial-gradient(#B71C1C 1px, transparent 1px); background-size: 24px 24px;"></div>
+
+      <div class="relative z-10 max-w-7xl mx-auto flex flex-col gap-6">
+
+        <!-- Barra de Búsqueda y Filtros -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-4">
+          <!-- Buscador principal -->
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+              placeholder="Buscar por nombre de cliente o número de mesa"
+              class="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-colors shadow-inner">
+          </div>
+
+          <!-- Filtros Secundarios -->
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <span class="text-sm font-medium text-gray-500">Mesa:</span>
+              <select [ngModel]="filtroMesa()" (ngModelChange)="filtroMesa.set($event)"
+                class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 outline-none cursor-pointer">
+                <option value="Todas">Todas</option>
+                <option value="1">Mesa 1</option>
+                <option value="2">Mesa 2</option>
+                <option value="3">Mesa 3</option>
+                <option value="4">Mesa 4</option>
+                <option value="5">Mesa 5</option>
+                <option value="6">Mesa 6</option>
+                <option value="7">Mesa 7</option>
+                <option value="8">Mesa 8</option>
+                <option value="9">Mesa 9</option>
+                <option value="10">Mesa 10</option>
+                <option value="10">Mesa 11</option>
+                <option value="10">Mesa 12</option>
+                <option value="10">Mesa 13</option>
+                <option value="10">Mesa 14</option>
+                <option value="10">Mesa 15</option>
+                <option value="10">Mesa 16</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2 border-l border-gray-200 pl-4">
+              <span class="text-sm font-medium text-gray-500">Zona:</span>
+              <select [ngModel]="filtroZona()" (ngModelChange)="filtroZona.set($event)"
+                class="bg-gray-50 border border-gray-200 text-gray-700 text-sm rounded-lg focus:ring-red-500 focus:border-red-500 block p-2 outline-none cursor-pointer">
+                <option value="Todas">Todas</option>
+                <option value="Zona 1">Zona 1</option>
+                <option value="Zona 2">Zona 2</option>
+                <option value="Terraza">Terraza</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lista de Órdenes (Filtradas) -->
+        <app-lista-ordenes [ordenes]="ordenesFiltradas()" (estadoCambiado)="cargarDatos()" />
+      </div>
+    </main>
+  </div>
+</div>

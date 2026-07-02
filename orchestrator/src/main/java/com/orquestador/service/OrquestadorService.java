@@ -124,7 +124,11 @@ public class OrquestadorService {
                 .uri("/mesas/{id}/asignar", mesaId)
                 .retrieve()
                 .toBodilessEntity()
-                .then();
+                .then()
+                .onErrorResume(error -> {
+                    log.error("Error al asignar mesa, continuando el flujo: {}", error.getMessage());
+                    return Mono.empty();
+                });
     }
 
     private Mono<Void> verificarStockItems(List<Map<String, Object>> items) {
@@ -154,6 +158,10 @@ public class OrquestadorService {
                                     String mensaje = (String) response.getOrDefault("mensaje", "Stock insuficiente");
                                     throw new RuntimeException(mensaje + " para producto: " + productoId);
                                 }
+                            })
+                            .onErrorResume(error -> {
+                                log.warn("Servicio de Inventario no disponible o falló, omitiendo verificación de stock para producto: {}", productoId);
+                                return Mono.empty();
                             });
                 })
                 .then();
@@ -423,15 +431,8 @@ public class OrquestadorService {
 
     // Método auxiliar para actualizar Ventas y descontar stock
    private Mono<Map<String, Object>> actualizarVentasYStock(Map<String, Object> detalleActualizado, String nuevoEstado, UUID pedidoId) {
-    // Mapear estado de cocina a estado de ventas
-    String estadoVentas;
-    if ("LISTO".equals(nuevoEstado)) {
-        estadoVentas = "SERVIDO";
-    } else if ("PREPARANDO".equals(nuevoEstado)) {
-        estadoVentas = "EN_COCINA";
-    } else {
-        estadoVentas = "PENDIENTE";
-    }
+    // Usar el mismo estado de cocina para ventas ya que ahora coinciden
+    String estadoVentas = nuevoEstado;
 
     log.info("Actualizando pedido en ventas: pedidoId={}, estadoVentas={}", pedidoId, estadoVentas);
 
@@ -541,7 +542,12 @@ public class OrquestadorService {
         return usuariosWebClient.get()
                 .uri("/usuarios")
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .map(usuarios -> {
+                    Map<String, Object> map = new HashMap<>();
+                    map.put("usuarios", usuarios);
+                    return map;
+                });
     }
 
     public Mono<Map<String, Object>> obtenerUsuario(String id) {
@@ -709,14 +715,70 @@ public class OrquestadorService {
         return cocinaWebClient.get()
                 .uri("/ordenes-produccion/activas")
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(this::enriquecerConCliente)
+                .collectList();
     }
 
     public Mono<List<Map<String, Object>>> getOrdenesPorEstado(String estado) {
         return cocinaWebClient.get()
                 .uri("/ordenes-produccion/por-estado/{estado}", estado)
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {})
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(this::enriquecerConCliente)
+                .collectList();
+    }
+
+    private Mono<Map<String, Object>> enriquecerConCliente(Map<String, Object> orden) {
+        Object pedidoIdObj = orden.get("pedidoId");
+        if (pedidoIdObj == null) {
+            orden.put("clienteNombre", "Desconocido");
+            return Mono.just(orden);
+        }
+
+        return ventasWebClient.get()
+                .uri("/pedidos/{pedidoId}", pedidoIdObj)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                .flatMap(pedidoResponse -> {
+                    Map<String, Object> data = (Map<String, Object>) pedidoResponse.get("data");
+                    if (data == null) data = pedidoResponse;
+
+                    Object clienteIdObj = data.get("clienteId");
+                    if (clienteIdObj == null) {
+                        orden.put("clienteNombre", "Desconocido");
+                        return Mono.just(orden);
+                    }
+
+                    return clientesWebClient.get()
+                            .uri("/clientes/{id}", clienteIdObj)
+                            .retrieve()
+                            .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {})
+                            .map(clienteResponse -> {
+                                Map<String, Object> clienteData = (Map<String, Object>) clienteResponse.get("data");
+                                if (clienteData == null) clienteData = clienteResponse;
+
+                                String nombre = (String) clienteData.getOrDefault("nombre", "");
+                                String apellido = (String) clienteData.getOrDefault("apellido", "");
+                                String clienteNombre = (nombre + " " + apellido).trim();
+                                if (clienteNombre.isEmpty()) clienteNombre = "Cliente";
+
+                                orden.put("clienteNombre", clienteNombre);
+                                return orden;
+                            })
+                            .onErrorResume(e -> {
+                                log.warn("No se pudo obtener cliente para pedido {}: {}", pedidoIdObj, e.getMessage());
+                                orden.put("clienteNombre", "Desconocido");
+                                return Mono.just(orden);
+                            });
+                })
+                .onErrorResume(e -> {
+                    log.warn("No se pudo obtener pedido {}: {}", pedidoIdObj, e.getMessage());
+                    orden.put("clienteNombre", "Desconocido");
+                    return Mono.just(orden);
+                });
     }
 
     // Método auxiliar privado

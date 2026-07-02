@@ -23,7 +23,13 @@ public class OrquestadorController {
     @PostMapping("/pedido/qr")
     public Mono<ResponseEntity<ApiResponseDTO<Map<String, Object>>>> pedidoQR(@RequestBody PedidoQRRequestDTO request) {
         return orquestadorService.procesarPedidoQR(request)
-                .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Pedido creado", response)));
+                .map(response -> {
+                    if (Boolean.TRUE.equals(response.get("success")) || !response.containsKey("success")) {
+                        return ResponseEntity.ok(ApiResponseDTO.success("Pedido creado", response));
+                    } else {
+                        return ResponseEntity.badRequest().body(ApiResponseDTO.error((String) response.get("error")));
+                    }
+                });
     }
 
     @PostMapping("/pedido/mozo")
