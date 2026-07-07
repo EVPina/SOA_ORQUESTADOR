@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -122,7 +123,7 @@ public class OrquestadorController {
     }
 
     @GetMapping("/usuarios")
-    public Mono<ResponseEntity<ApiResponseDTO<Map<String, Object>>>> listarUsuarios() {
+    public Mono<ResponseEntity<ApiResponseDTO<List<Map<String, Object>>>>> listarUsuarios() {
         return orquestadorService.listarUsuarios()
                 .map(response -> ResponseEntity.ok(ApiResponseDTO.success("Usuarios obtenidos", response)));
     }

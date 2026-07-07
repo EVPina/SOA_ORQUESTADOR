@@ -537,12 +537,12 @@ public class OrquestadorService {
                 .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
     }
 
-    public Mono<Map<String, Object>> listarUsuarios() {
+    public Mono<List<Map<String, Object>>> listarUsuarios() {
         return usuariosWebClient.get()
                 .uri("/usuarios")
                 .retrieve()
-                .bodyToMono(new ParameterizedTypeReference<Map<String, Object>>() {});
-    }
+                .bodyToMono(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
+}
 
     public Mono<Map<String, Object>> obtenerUsuario(String id) {
         return usuariosWebClient.get()
