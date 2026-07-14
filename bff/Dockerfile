@@ -13,7 +13,9 @@ WORKDIR /app
 
 # 🔥 AQUÍ ESTÁ EL CAMBIO IMPORTANTE
 COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 7443
-RUN adduser -D appuser
+
 USER appuser
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
