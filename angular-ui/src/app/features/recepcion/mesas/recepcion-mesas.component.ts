@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SidebarComponent } from '../../../shared/components/sidebar.component';
 import { DatePipe } from '@angular/common';
-import { MesasService, Mesa } from './mesas.service';
+import { MesasService, Mesa, MesaQr } from './mesas.service';
 
 @Component({
   selector: 'app-recepcion-mesas',
@@ -146,6 +146,15 @@ import { MesasService, Mesa } from './mesas.service';
                       }
                       
                       <div class="text-gray-400 text-xs font-medium">Capacidad: {{ mesa.capacidadMaxima }}</div>
+
+                      <button
+                        (click)="verQr(mesa)"
+                        class="mt-3 flex items-center gap-1.5 text-[11px] font-semibold text-[#B71C1C] hover:text-white bg-red-50 hover:bg-[#B71C1C] border border-red-200 hover:border-[#B71C1C] px-2.5 py-1 rounded-lg transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m2-4v2m0-6H9v4m0-4H5m0 0V5m0 4H3m10-4h2M9 3H5a2 2 0 00-2 2v4m0 0v10a2 2 0 002 2h4m6-16h4a2 2 0 012 2v4m0 0v10a2 2 0 01-2 2h-4" />
+                        </svg>
+                        Ver QR
+                      </button>
                     </div>
                   </div>
                 }
@@ -160,6 +169,37 @@ import { MesasService, Mesa } from './mesas.service';
           </div>
         </main>
       </div>
+
+      <!-- Modal QR -->
+      @if (mesaSeleccionada(); as mesa) {
+        <div class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" (click)="cerrarQr()">
+          <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 flex flex-col items-center gap-4" (click)="$event.stopPropagation()">
+            <div class="w-full flex items-center justify-between">
+              <h3 class="text-lg font-bold text-gray-800">Mesa N° {{ mesa.numero }}</h3>
+              <button (click)="cerrarQr()" class="text-gray-400 hover:text-gray-700 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+              </button>
+            </div>
+
+            @if (cargandoQr()) {
+              <div class="w-64 h-64 flex items-center justify-center">
+                <div class="w-10 h-10 border-4 border-red-200 border-t-[#B71C1C] rounded-full animate-spin"></div>
+              </div>
+            } @else if (mesaQrSeleccionada(); as mesaQr) {
+              <img [src]="mesaQr.qrCode" alt="QR Mesa" class="w-64 h-64 rounded-xl border border-gray-100 shadow-sm" />
+              <p class="text-xs text-gray-400 text-center break-all">{{ mesaQr.url }}</p>
+            } @else {
+              <p class="text-sm text-red-500 text-center py-8">No se pudo generar el código QR.</p>
+            }
+
+            <button
+              (click)="cerrarQr()"
+              class="w-full bg-[#B71C1C] hover:bg-[#9b1515] text-white font-semibold py-2.5 rounded-xl transition-colors">
+              Cerrar
+            </button>
+          </div>
+        </div>
+      }
     </div>
   `,
 })
@@ -176,6 +216,11 @@ export class RecepcionMesasComponent implements OnInit {
 
   readonly mesasLibres = signal(0);
   readonly mesasOcupadas = signal(0);
+
+  // Modal QR
+  readonly mesaSeleccionada = signal<Mesa | null>(null);
+  readonly mesaQrSeleccionada = signal<MesaQr | null>(null);
+  readonly cargandoQr = signal(false);
 
   // Zonas únicas extraídas de las mesas
   readonly zonasUnicas = computed(() => {
@@ -225,5 +270,27 @@ export class RecepcionMesasComponent implements OnInit {
       
       this.cargando.set(false);
     });
+  }
+
+  verQr(mesa: Mesa) {
+    this.mesaSeleccionada.set(mesa);
+    this.mesaQrSeleccionada.set(null);
+    this.cargandoQr.set(true);
+
+    this.mesasService.getQrMesa(mesa.id).subscribe({
+      next: (qr) => {
+        this.mesaQrSeleccionada.set(qr);
+        this.cargandoQr.set(false);
+      },
+      error: (err) => {
+        console.error('Error obteniendo QR de la mesa', err);
+        this.cargandoQr.set(false);
+      },
+    });
+  }
+
+  cerrarQr() {
+    this.mesaSeleccionada.set(null);
+    this.mesaQrSeleccionada.set(null);
   }
 }

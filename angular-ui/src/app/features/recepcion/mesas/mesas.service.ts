@@ -15,10 +15,16 @@ export interface Mesa {
   };
 }
 
+export interface MesaQr {
+  mesaId: string;
+  qrCode: string;
+  url: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class MesasService {
   private readonly http = inject(HttpClient);
-  
+
   getMesas(): Observable<Mesa[]> {
     return this.http.get<Mesa[]>('/api/v1/mesas').pipe(
       catchError(err => {
@@ -26,5 +32,9 @@ export class MesasService {
         return of([]);
       })
     );
+  }
+
+  getQrMesa(mesaId: string): Observable<MesaQr> {
+    return this.http.get<MesaQr>(`/api/v1/menu/qr/mesa/${mesaId}`);
   }
 }

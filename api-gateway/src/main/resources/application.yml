@@ -8,84 +8,84 @@ spring:
     gateway:
       routes:
         - id: orquestador
-          uri: http://localhost:8080
+          uri: http://orquestador:8080
           predicates:
             - Path=/api/orquestador/**
           filters:
             - StripPrefix=0
 
         - id: auth
-          uri: http://localhost:8081
+          uri: http://servicio-usuarios:8081
           predicates:
             - Path=/api/v1/auth/**
           filters:
             - StripPrefix=0
 
         - id: usuarios
-          uri: http://localhost:8081
+          uri: http://servicio-usuarios:8081
           predicates:
             - Path=/api/v1/usuarios/**
           filters:
             - StripPrefix=0
 
         - id: clientes
-          uri: http://localhost:8082
+          uri: http://servicio-clientes:8082
           predicates:
             - Path=/api/v1/clientes/**
           filters:
             - StripPrefix=0
 
         - id: mesas
-          uri: http://localhost:8083
+          uri: http://servicio-mesas:8083
           predicates:
             - Path=/api/v1/mesas/**, /api/v1/asignaciones-mozo/**
           filters:
             - StripPrefix=0
-            
+
         - id: sesiones-mesa
-          uri: http://localhost:8083
+          uri: http://servicio-mesas:8083
           predicates:
             - Path=/api/v1/sesiones-mesa/**
           filters:
             - StripPrefix=0
 
         - id: qr
-          uri: http://localhost:8084
+          uri: http://servicio-qr:8084
           predicates:
-            - Path=/api/v1/qr/**
+            - Path=/api/v1/menu/**
           filters:
             - StripPrefix=0
 
         - id: ventas
-          uri: http://localhost:8085
+          uri: http://servicio-ventas:8085
           predicates:
             - Path=/api/v1/ventas/**, /api/v1/productos/**, /api/v1/pedidos/**, /api/v1/pagos/**, /api/v1/comprobantes/**
           filters:
             - StripPrefix=0
 
         - id: cocina
-          uri: http://localhost:8086
+          uri: http://servicio-cocina:8086
           predicates:
             - Path=/api/v1/cocina/**, /api/v1/ordenes-produccion/**, /api/v1/detalles-produccion/**
           filters:
             - StripPrefix=0
 
         - id: inventario
-          uri: http://localhost:8087
+          uri: http://servicio-inventario:8087
           predicates:
             - Path=/api/v1/inventario/**
           filters:
             - StripPrefix=0
 
         - id: finanzas
-          uri: http://localhost:8088
+          uri: http://servicio-finanzas:8088
           predicates:
             - Path=/api/v1/finanzas/**
           filters:
             - StripPrefix=0
 
         - id: auditoria
-          uri: http://localhost:8089
+          uri: http://servicio-auditoria:8089
           predicates:
             - Path=/api/v1/auditoria/**
           filters:
