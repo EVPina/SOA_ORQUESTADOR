@@ -71,8 +71,8 @@ services:
     ports:
       - "9080:9080"
     environment:
-      KC_BOOTSTRAP_ADMIN_USERNAME: admin
-      KC_BOOTSTRAP_ADMIN_PASSWORD: admin123
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HOSTNAME: keycloak
       KC_HTTP_PORT: 9080
       KC_HEALTH_ENABLED: "true"
@@ -131,8 +131,6 @@ services:
   servicio-clientes:
     build: ./servicios/clientes
     container_name: soa-clientes
-    ports:
-      - "8082:8082"
     env_file: ./servicios/clientes/.env
     networks:
       - soa-network
@@ -143,8 +141,6 @@ services:
   servicio-mesas:
     build: ./servicios/mesas
     container_name: soa-mesas
-    ports:
-      - "8083:8083"
     env_file: ./servicios/mesas/.env
     networks:
       - soa-network
@@ -155,8 +151,6 @@ services:
   servicio-qr:
     build: ./servicios/qr
     container_name: soa-qr
-    ports:
-      - "8084:8084"
     env_file: ./servicios/qr/.env
     networks:
       - soa-network
@@ -167,8 +161,6 @@ services:
   servicio-ventas:
     build: ./servicios/ventas
     container_name: soa-ventas
-    ports:
-      - "8085:8085"
     env_file: ./servicios/ventas/.env
     networks:
       - soa-network
@@ -179,8 +171,6 @@ services:
   servicio-cocina:
     build: ./servicios/cocina
     container_name: soa-cocina
-    ports:
-      - "8086:8086"
     env_file: ./servicios/cocina/.env
     networks:
       - soa-network
@@ -191,8 +181,6 @@ services:
   servicio-inventario:
     build: ./servicios/inventario
     container_name: soa-inventario
-    ports:
-      - "8087:8087"
     env_file: ./servicios/inventario/.env
     networks:
       - soa-network
@@ -203,8 +191,6 @@ services:
   servicio-finanzas:
     build: ./servicios/finanzas
     container_name: soa-finanzas
-    ports:
-      - "8088:8088"
     env_file: ./servicios/finanzas/.env
     networks:
       - soa-network

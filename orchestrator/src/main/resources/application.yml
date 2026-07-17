@@ -1,6 +1,12 @@
 server:
   port: 8080
 
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+
+jwt:
+  secret: ${JWT_SECRET}
+
 spring:
   application:
     name: soa-orquestador
