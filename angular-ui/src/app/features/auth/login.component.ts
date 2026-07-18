@@ -4,6 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from './auth.service';
 import { MesasService } from '../../core/services/mesas.service';
 import { HttpClient } from '@angular/common/http';
+import { LoginResponse } from './models';
+import { environment } from '../../../environments/environment';
+
+declare const google: any;
 
 @Component({
   selector: 'app-login',
@@ -144,6 +148,14 @@ import { HttpClient } from '@angular/common/http';
             </button>
           </form>
 
+          <div class="flex items-center gap-3 my-6">
+            <div class="h-px bg-[#2E221B]/10 flex-1"></div>
+            <span class="text-xs uppercase tracking-wider text-[#2E221B]/40 font-medium">o continúa con</span>
+            <div class="h-px bg-[#2E221B]/10 flex-1"></div>
+          </div>
+
+          <div id="google-signin-button" class="flex justify-center"></div>
+
           <p class="text-center mt-6 text-sm text-[#2E221B]/60">
             ¿No tienes cuenta?
             <a routerLink="/registro" class="text-[#B71C1C] hover:text-[#9b1515] font-medium hover:underline">Regístrate aquí</a>
@@ -173,7 +185,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe(params => {
       let mesaId = params['mesaId'];
-      
+
       if (mesaId) {
         sessionStorage.setItem('pending_mesa_id', mesaId);
         this.mesaIdDetectada.set(true);
@@ -185,6 +197,39 @@ export class LoginComponent implements OnInit {
           this.cargarDatosMesa(mesaId);
         }
       }
+    });
+
+    this.initGoogleSignIn();
+  }
+
+  private initGoogleSignIn(intentos = 20): void {
+    if (typeof google === 'undefined') {
+      if (intentos <= 0) return;
+      setTimeout(() => this.initGoogleSignIn(intentos - 1), 150);
+      return;
+    }
+
+    google.accounts.id.initialize({
+      client_id: environment.googleClientId,
+      callback: (resp: { credential: string }) => this.onGoogleCredential(resp.credential),
+    });
+
+    google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
+      theme: 'outline',
+      size: 'large',
+      width: 320,
+      text: 'continue_with',
+    });
+  }
+
+  onGoogleCredential(idToken: string): void {
+    this.loading.set(true);
+    this.error.set('');
+
+    this.auth.loginWithGoogle(idToken).subscribe({
+      next: (res) => this.completarLoginCliente(res),
+      error: (err) => this.manejarErrorLogin(err),
+      complete: () => this.loading.set(false),
     });
   }
 
@@ -223,63 +268,67 @@ export class LoginComponent implements OnInit {
     this.error.set('');
 
     this.auth.login({ username: this.email(), password: this.password(), loginType: 'CLIENTE' }).subscribe({
-      next: (res) => {
-        const mesaId = sessionStorage.getItem('pending_mesa_id');
-        
-        if (!mesaId) {
-          this.error.set('No se detectó un código QR de mesa válido. Por favor, vuelva a escanear el QR.');
-          this.loading.set(false);
-          return;
-        }
-
-        // Primero guardamos temporalmente, pero si falla la mesa, revertiremos
-        this.auth.setSession(res);
-
-        console.log('Iniciando sesión en la mesa:', mesaId);
-        this.mesasService.iniciarSesionMesa({
-          mesaId: mesaId,
-          clienteId: res.id
-        }).subscribe({
-          next: (sesionMesa) => {
-            console.log('Sesion de mesa iniciada correctamente', sesionMesa);
-            sessionStorage.removeItem('pending_mesa_id');
-            sessionStorage.setItem('current_sesion_mesa_id', sesionMesa.id);
-            this.router.navigateByUrl(this.auth.getDashboardRoute());
-          },
-          error: (err) => {
-            console.error('Error al iniciar la sesión de mesa', err);
-            // Revertir login
-            this.auth.logout();
-            this.error.set('El código QR es inválido o la mesa ya no existe en el sistema.');
-            this.loading.set(false);
-          }
-        });
-      },
-      error: (err) => {
-        let errorMsg = err?.error?.message || err?.error || 'Error al iniciar sesión';
-        
-        if (typeof errorMsg === 'object') {
-          // Si es un objeto de error (ej: ProgressEvent, HTTP Error object sin message claro)
-          errorMsg = errorMsg.message || 'Error de conexión o servidor no disponible';
-        }
-
-        if (typeof errorMsg === 'string') {
-          // Extraer mensaje de comillas si viene con formato 'codigo de eror + descripcion del error "mensaje"'
-          const match = errorMsg.match(/"([^"]+)"/);
-          if (match) {
-            errorMsg = match[1];
-          } else {
-            // Eliminar código HTTP inicial si existe
-            errorMsg = errorMsg.replace(/^\d{3}\s+[A-Z_]+\s+/, '').replace(/^"(.*)"$/, '$1');
-          }
-        } else {
-           errorMsg = 'Error al iniciar sesión';
-        }
-        
-        this.error.set(errorMsg);
-        this.loading.set(false);
-      },
+      next: (res) => this.completarLoginCliente(res),
+      error: (err) => this.manejarErrorLogin(err),
       complete: () => this.loading.set(false),
     });
+  }
+
+  private completarLoginCliente(res: LoginResponse): void {
+    const mesaId = sessionStorage.getItem('pending_mesa_id');
+
+    if (!mesaId) {
+      this.error.set('No se detectó un código QR de mesa válido. Por favor, vuelva a escanear el QR.');
+      this.loading.set(false);
+      return;
+    }
+
+    // Primero guardamos temporalmente, pero si falla la mesa, revertiremos
+    this.auth.setSession(res);
+
+    console.log('Iniciando sesión en la mesa:', mesaId);
+    this.mesasService.iniciarSesionMesa({
+      mesaId: mesaId,
+      clienteId: res.id
+    }).subscribe({
+      next: (sesionMesa) => {
+        console.log('Sesion de mesa iniciada correctamente', sesionMesa);
+        sessionStorage.removeItem('pending_mesa_id');
+        sessionStorage.setItem('current_sesion_mesa_id', sesionMesa.id);
+        this.router.navigateByUrl(this.auth.getDashboardRoute());
+      },
+      error: (err) => {
+        console.error('Error al iniciar la sesión de mesa', err);
+        // Revertir login
+        this.auth.logout();
+        this.error.set('El código QR es inválido o la mesa ya no existe en el sistema.');
+        this.loading.set(false);
+      }
+    });
+  }
+
+  private manejarErrorLogin(err: any): void {
+    let errorMsg = err?.error?.message || err?.error || 'Error al iniciar sesión';
+
+    if (typeof errorMsg === 'object') {
+      // Si es un objeto de error (ej: ProgressEvent, HTTP Error object sin message claro)
+      errorMsg = errorMsg.message || 'Error de conexión o servidor no disponible';
+    }
+
+    if (typeof errorMsg === 'string') {
+      // Extraer mensaje de comillas si viene con formato 'codigo de eror + descripcion del error "mensaje"'
+      const match = errorMsg.match(/"([^"]+)"/);
+      if (match) {
+        errorMsg = match[1];
+      } else {
+        // Eliminar código HTTP inicial si existe
+        errorMsg = errorMsg.replace(/^\d{3}\s+[A-Z_]+\s+/, '').replace(/^"(.*)"$/, '$1');
+      }
+    } else {
+       errorMsg = 'Error al iniciar sesión';
+    }
+
+    this.error.set(errorMsg);
+    this.loading.set(false);
   }
 }

@@ -60,6 +60,21 @@ export class AuthService {
     return this.http.post<LoginResponse>(`/api/v1/clientes`, request);
   }
 
+  loginWithGoogle(idToken: string): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`/api/v1/clientes/login-google`, { id_token: idToken }).pipe(
+      tap(res => {
+        if (!res.rol) (res as any).rol = 'CLIENTE';
+        if (!res.token) (res as any).token = res.id || 'token-cliente';
+        if (!res.nombreCompleto && (res as any).nombre) {
+           (res as any).nombreCompleto = `${(res as any).nombre} ${(res as any).apellido || ''}`.trim();
+        }
+        if (!res.username && (res as any).email) {
+           (res as any).username = (res as any).email;
+        }
+      })
+    );
+  }
+
   setSession(response: LoginResponse): void {
     const user: AuthUser = {
       id: response.id || response.token,
@@ -95,6 +110,13 @@ export class AuthService {
     }
 
     this.ejecutarLogoutLocal(rol);
+  }
+
+  /** El backend rechazó el token (vencido/invalido). A diferencia de logout(),
+   * no intenta liberar la mesa: la sesión ya no es válida para el servidor. */
+  forceLogout(): void {
+    this.clearSession();
+    this.router.navigate(['/login']);
   }
 
   private ejecutarLogoutLocal(rol: string | undefined): void {
