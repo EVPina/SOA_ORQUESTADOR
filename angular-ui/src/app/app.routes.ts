@@ -24,6 +24,12 @@ export const routes: Routes = [
     data: { roles: ['ADMIN'] },
   },
   {
+    path: 'admin/usuarios',
+    loadComponent: () => import('./features/admin/usuarios/admin-usuarios.component').then(m => m.AdminUsuariosComponent),
+    canActivate: [authGuard],
+    data: { roles: ['ADMIN'] },
+  },
+  {
     path: 'cocina',
     loadComponent: () => import('./features/cocina/layout/pantalla-cocina.component').then(m => m.PantallaCocinaComponent),
     canActivate: [authGuard],

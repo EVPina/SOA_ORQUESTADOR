@@ -5,12 +5,21 @@ import { catchError } from 'rxjs/operators';
 
 export interface Usuario {
   id: string;
+  username: string;
   nombreCompleto: string;
   email: string;
   rol: string;
   estado: string;
   dni?: string;
   mesasAsignadas?: string[];
+}
+
+export interface UsuarioPayload {
+  username: string;
+  password?: string;
+  nombreCompleto: string;
+  email: string;
+  rol: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,6 +45,7 @@ export class UsuariosService {
           .filter(u => u.rol === 'MOZO')
           .map(u => ({
             id: u.id,
+            username: u.username || '',
             nombreCompleto: u.nombreCompleto || u.nombre || 'Mozo Sin Nombre',
             email: u.email || u.username || '',
             rol: u.rol,
@@ -61,12 +71,57 @@ export class UsuariosService {
     );
   }
 
+  getAllUsuarios(): Observable<Usuario[]> {
+    return this.http.get<any>('/api/v1/usuarios').pipe(
+      map(response => {
+        let usuarios: any[] = [];
+        if (Array.isArray(response)) {
+          usuarios = response;
+        } else if (response && response.data && Array.isArray(response.data)) {
+          usuarios = response.data;
+        } else if (response && response.usuarios && Array.isArray(response.usuarios)) {
+          usuarios = response.usuarios;
+        }
+
+        return usuarios.map(u => ({
+          id: u.id,
+          username: u.username || '',
+          nombreCompleto: u.nombreCompleto || u.nombre || '',
+          email: u.email || '',
+          rol: u.rol || '',
+          estado: u.estado || 'ACTIVO',
+        }));
+      }),
+      catchError(err => {
+        console.error('Error obteniendo usuarios', err);
+        return of([]);
+      })
+    );
+  }
+
+  crearUsuario(payload: UsuarioPayload): Observable<Usuario> {
+    return this.http.post<Usuario>('/api/v1/usuarios', payload);
+  }
+
+  actualizarUsuario(id: string, payload: UsuarioPayload): Observable<Usuario> {
+    return this.http.put<Usuario>(`/api/v1/usuarios/${id}`, payload);
+  }
+
+  eliminarUsuario(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/v1/usuarios/${id}`);
+  }
+
+  cambiarRol(id: string, rol: string): Observable<Usuario> {
+    return this.http.put<Usuario>(`/api/v1/usuarios/${id}/rol`, null, { params: { rol } });
+  }
+
   getUsuarioById(id: string): Observable<Usuario> {
     return this.http.get<any>(`/api/v1/usuarios/${id}`).pipe(
       map(response => {
         const u = response.data ? response.data : response;
         return {
           id: u.id || id,
+          username: u.username || '',
           nombreCompleto: u.nombreCompleto || u.nombre || 'Cliente Anónimo',
           email: u.email || u.username || '',
           rol: u.rol || 'CLIENTE',
@@ -77,6 +132,7 @@ export class UsuariosService {
         console.error(`Error obteniendo usuario ${id}`, err);
         return of({
           id,
+          username: '',
           nombreCompleto: 'Cliente Anónimo',
           email: '',
           rol: 'CLIENTE',
@@ -92,6 +148,7 @@ export class UsuariosService {
         const u = response.data ? response.data : response;
         return {
           id: u.id || id,
+          username: u.username || '',
           nombreCompleto: u.nombreCompleto || u.nombre || u.nombres || 'Cliente Anónimo',
           email: u.email || u.username || '',
           rol: u.rol || 'CLIENTE',
