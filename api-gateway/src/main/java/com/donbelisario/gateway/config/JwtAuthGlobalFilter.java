@@ -35,6 +35,7 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     private static final List<PublicRoute> PUBLIC_ROUTES = List.of(
             new PublicRoute(HttpMethod.POST, "/api/v1/auth/login"),
             new PublicRoute(HttpMethod.POST, "/api/v1/clientes/login"),
+            new PublicRoute(HttpMethod.POST, "/api/v1/clientes/login-google"),
             new PublicRoute(HttpMethod.POST, "/api/v1/clientes"),
             new PublicRoute(HttpMethod.GET, "/api/v1/mesas/*"),
             new PublicRoute(HttpMethod.GET, "/api/v1/asignaciones-mozo/mesa/*"),
