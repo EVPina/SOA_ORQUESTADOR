@@ -121,7 +121,7 @@ services:
     container_name: soa-usuarios
     ports:
       - "8081:8081"
-    env_file: ./servicios/usuarios/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -131,7 +131,7 @@ services:
   servicio-clientes:
     build: ./servicios/clientes
     container_name: soa-clientes
-    env_file: ./servicios/clientes/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -141,7 +141,7 @@ services:
   servicio-mesas:
     build: ./servicios/mesas
     container_name: soa-mesas
-    env_file: ./servicios/mesas/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -151,7 +151,7 @@ services:
   servicio-qr:
     build: ./servicios/qr
     container_name: soa-qr
-    env_file: ./servicios/qr/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -161,7 +161,7 @@ services:
   servicio-ventas:
     build: ./servicios/ventas
     container_name: soa-ventas
-    env_file: ./servicios/ventas/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -171,7 +171,7 @@ services:
   servicio-cocina:
     build: ./servicios/cocina
     container_name: soa-cocina
-    env_file: ./servicios/cocina/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -181,7 +181,7 @@ services:
   servicio-inventario:
     build: ./servicios/inventario
     container_name: soa-inventario
-    env_file: ./servicios/inventario/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
@@ -191,7 +191,7 @@ services:
   servicio-finanzas:
     build: ./servicios/finanzas
     container_name: soa-finanzas
-    env_file: ./servicios/finanzas/.env
+    env_file: .env
     networks:
       - soa-network
     depends_on:
