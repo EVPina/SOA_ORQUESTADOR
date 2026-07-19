@@ -53,7 +53,11 @@ export class AuthService {
         })
       );
     } else {
-      return this.http.post<LoginResponse>(`${this.apiUrl}/login`, request);
+      const payload = {
+        username: request.username,
+        password: request.password
+      };
+      return this.http.post<LoginResponse>(`${this.apiUrl}/login`, payload);
     }
   }
 
