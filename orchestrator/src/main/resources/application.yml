@@ -1,8 +1,8 @@
 server:
   port: 8080
 
-app:
-  frontend-url: ${FRONTEND_URL:http://localhost:4200}
+# app:
+#   frontend-url: ${FRONTEND_URL:http://localhost:4200}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -21,21 +21,21 @@ spring:
 
 servicios:
   usuarios:
-    url: ${SERVICE_USUARIOS_URL:http://localhost:8081/api/v1}
+    url: ${SERVICE_USUARIOS_URL:https://soa-back-usuarios-1.onrender.com/api/v1}
   clientes:
-    url: ${SERVICE_CLIENTES_URL:http://localhost:8082/api/v1}
+    url: ${SERVICE_CLIENTES_URL:https://soa-back-clientes.onrender.com/api/v1}
   mesas:
-    url: ${SERVICE_MESAS_URL:http://localhost:8083/api/v1}
+    url: ${SERVICE_MESAS_URL:https://soa-back-mesas.onrender.com/api/v1}
   qr:
-    url: ${SERVICE_QR_URL:http://localhost:8084/api/v1}
+    url: ${SERVICE_QR_URL:https://soa-back-qr.onrender.com/api/v1}
   ventas:
-    url: ${SERVICE_VENTAS_URL:http://localhost:8085/api/v1}
+    url: ${SERVICE_VENTAS_URL:https://soa-back-ventas.onrender.com/api/v1}
   cocina:
-    url: ${SERVICE_COCINA_URL:http://localhost:8086/api/v1}
+    url: ${SERVICE_COCINA_URL:https://soa-back-cocina.onrender.com/api/v1}
   inventario:
-    url: ${SERVICE_INVENTARIO_URL:http://localhost:8087/api/v1}
+    url: ${SERVICE_INVENTARIO_URL:https://soa-back-inventario.onrender.com/api/v1}
   finanzas:
-    url: ${SERVICE_FINANZAS_URL:http://localhost:8088/api/v1}
+    url: ${SERVICE_FINANZAS_URL:https://soa-back-finanzas.onrender.com/api/v1}
 
 logging:
   level:
