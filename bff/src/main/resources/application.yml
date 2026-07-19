@@ -6,6 +6,8 @@ spring:
     name: bff
   cloud:
     gateway:
+      default-filters:
+        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
       routes:
         - id: api-gateway
           uri: ${API_GATEWAY_URL}
