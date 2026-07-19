@@ -8,7 +8,7 @@ spring:
     gateway:
       routes:
         - id: api-gateway
-          uri: http://localhost:8889
+          uri: ${API_GATEWAY_URL}
           predicates:
             - Path=/api/**
           filters:
@@ -20,14 +20,14 @@ spring:
         registration:
           keycloak:
             provider: keycloak
-            client-id: ${KEYCLOAK_CLIENT_ID:bff-client}
-            client-secret: ${KEYCLOAK_CLIENT_SECRET:}
+            client-id: ${KEYCLOAK_CLIENT_ID}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET}
             authorization-grant-type: authorization_code
             redirect-uri: "{baseUrl}/login/oauth2/code/keycloak"
             scope: openid, profile, email
         provider:
           keycloak:
-            issuer-uri: ${KEYCLOAK_URL:http://localhost:9080}/realms/${KEYCLOAK_REALM:donbelisario}
+            issuer-uri: ${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}
             user-name-attribute: preferred_username
 
   session:
