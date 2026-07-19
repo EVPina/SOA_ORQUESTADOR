@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import type { LoginRequest, LoginResponse, RegisterRequest, AuthUser, Rol } from './models';
 import { ROL_ROUTES } from './models';
+import { environment } from '../../../environments/environment';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -11,7 +12,7 @@ export class AuthService {
   private readonly router = inject(Router);
   private readonly currentUser = signal<AuthUser | null>(null);
   private readonly STORAGE_KEY = 'donbelisario_auth';
-  private readonly apiUrl = '/api/v1/auth';
+  private readonly apiUrl = `${environment.apiUrl}/auth`;
 
   constructor() {
     const stored = localStorage.getItem(this.STORAGE_KEY);
