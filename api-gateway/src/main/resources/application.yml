@@ -1,5 +1,5 @@
 server:
-  port: 8889
+  port: ${PORT:8889}
 
 jwt:
   secret: ${JWT_SECRET}
@@ -11,84 +11,84 @@ spring:
     gateway:
       routes:
         - id: orquestador
-          uri: http://orquestador:8080
+          uri: {ORQUESTADOR_URL}
           predicates:
             - Path=/api/orquestador/**
           filters:
             - StripPrefix=0
 
         - id: auth
-          uri: http://servicio-usuarios:8081
+          uri: {USUARIOS_URL}
           predicates:
             - Path=/api/v1/auth/**
           filters:
             - StripPrefix=0
 
         - id: usuarios
-          uri: http://servicio-usuarios:8081
+          uri: {USUARIOS_URL}
           predicates:
             - Path=/api/v1/usuarios/**
           filters:
             - StripPrefix=0
 
         - id: clientes
-          uri: http://servicio-clientes:8082
+          uri: {CLIENTES_URL}
           predicates:
             - Path=/api/v1/clientes/**
           filters:
             - StripPrefix=0
 
         - id: mesas
-          uri: http://servicio-mesas:8083
+          uri: {MESAS_URL}
           predicates:
             - Path=/api/v1/mesas/**, /api/v1/asignaciones-mozo/**
           filters:
             - StripPrefix=0
 
         - id: sesiones-mesa
-          uri: http://servicio-mesas:8083
+          uri: {MESAS_URL}
           predicates:
             - Path=/api/v1/sesiones-mesa/**
           filters:
             - StripPrefix=0
 
         - id: qr
-          uri: http://servicio-qr:8084
+          uri: {QR_URL}
           predicates:
             - Path=/api/v1/menu/**
           filters:
             - StripPrefix=0
 
         - id: ventas
-          uri: http://servicio-ventas:8085
+          uri: {VENTAS_URL}
           predicates:
             - Path=/api/v1/ventas/**, /api/v1/productos/**, /api/v1/pedidos/**, /api/v1/pagos/**, /api/v1/comprobantes/**
           filters:
             - StripPrefix=0
 
         - id: cocina
-          uri: http://servicio-cocina:8086
+          uri: {COCINA_URL}
           predicates:
             - Path=/api/v1/cocina/**, /api/v1/ordenes-produccion/**, /api/v1/detalles-produccion/**
           filters:
             - StripPrefix=0
 
         - id: inventario
-          uri: http://servicio-inventario:8087
+          uri: {INVENTARIO_URL}
           predicates:
             - Path=/api/v1/inventario/**
           filters:
             - StripPrefix=0
 
         - id: finanzas
-          uri: http://servicio-finanzas:8088
+          uri: {FINANZAS_URL}
           predicates:
             - Path=/api/v1/finanzas/**
           filters:
             - StripPrefix=0
 
         - id: auditoria
-          uri: http://servicio-auditoria:8089
+          uri: {AUDITORIA_URL}
           predicates:
             - Path=/api/v1/auditoria/**
           filters:
