@@ -8,6 +8,7 @@ spring:
     gateway:
       default-filters:
         - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+        - RemoveRequestHeader=Origin
       routes:
         - id: api-gateway
           uri: ${API_GATEWAY_URL}
