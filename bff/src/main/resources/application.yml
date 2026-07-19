@@ -41,11 +41,6 @@ spring:
         host: ${REDIS_HOST}
         port: ${REDIS_PORT}
 
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_URL:https://discovery-server-qv83.onrender.com}
-
 management:
   endpoints:
     web:
