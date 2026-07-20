@@ -8,6 +8,8 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.reactive.CorsConfigurationSource;
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationEntryPoint;
 
 import java.util.Arrays;
 
@@ -24,6 +26,15 @@ public class SecurityConfig {
                 .pathMatchers("/api/v1/auth/**").permitAll()
                 .pathMatchers("/api/v1/clientes/**").permitAll()
                 .anyExchange().authenticated()
+            )
+            .exceptionHandling(exceptionHandling -> exceptionHandling
+                .authenticationEntryPoint((swe, e) -> {
+                    if (swe.getRequest().getPath().value().startsWith("/api/")) {
+                        swe.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                        return swe.getResponse().setComplete();
+                    }
+                    return new RedirectServerAuthenticationEntryPoint("/oauth2/authorization/keycloak").commence(swe, e);
+                })
             )
             .oauth2Login(org.springframework.security.config.Customizer.withDefaults());
         return http.build();

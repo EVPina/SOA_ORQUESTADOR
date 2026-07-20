@@ -40,7 +40,7 @@ export class AuthService {
         identificador: request.username,
         password: request.password
       };
-      return this.http.post<LoginResponse>(`/api/v1/clientes/login`, payload).pipe(
+      return this.http.post<LoginResponse>(`${environment.apiUrl}/clientes/login`, payload).pipe(
         tap(res => {
           if (!res.rol) (res as any).rol = 'CLIENTE';
           if (!res.token) (res as any).token = res.id || 'token-cliente';
@@ -62,11 +62,11 @@ export class AuthService {
   }
 
   register(request: RegisterRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`/api/v1/clientes`, request);
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/clientes`, request);
   }
 
   loginWithGoogle(idToken: string): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`/api/v1/clientes/login-google`, { id_token: idToken }).pipe(
+    return this.http.post<LoginResponse>(`${environment.apiUrl}/clientes/login-google`, { id_token: idToken }).pipe(
       tap(res => {
         if (!res.rol) (res as any).rol = 'CLIENTE';
         if (!res.token) (res as any).token = res.id || 'token-cliente';
@@ -100,7 +100,7 @@ export class AuthService {
       const sesionMesaId = sessionStorage.getItem('current_sesion_mesa_id');
       if (sesionMesaId) {
         // Enviar petición con el token AÚN VÁLIDO
-        this.http.put(`/api/v1/sesiones-mesa/${sesionMesaId}/finalizar`, {}).subscribe({
+        this.http.put(`${environment.apiUrl}/sesiones-mesa/${sesionMesaId}/finalizar`, {}).subscribe({
           next: () => {
             console.log('Sesión de mesa finalizada y mesa liberada (ocupación - 1)');
             this.ejecutarLogoutLocal(rol);
