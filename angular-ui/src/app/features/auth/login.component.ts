@@ -241,12 +241,12 @@ export class LoginComponent implements OnInit {
     });
 
     // Cargar mozo asignado
-    this.http.get<any>(`/api/v1/asignaciones-mozo/mesa/${mesaId}`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/asignaciones-mozo/mesa/${mesaId}`).subscribe({
       next: (res) => {
         const asignaciones = res.data ? res.data : res;
         if (Array.isArray(asignaciones) && asignaciones.length > 0) {
           const mozoId = asignaciones[0].mozoId;
-          this.http.get<any>(`/api/v1/usuarios/${mozoId}`).subscribe({
+          this.http.get<any>(`${environment.apiUrl}/usuarios/${mozoId}`).subscribe({
             next: (mozoRes) => {
               const mozo = mozoRes.data ? mozoRes.data : mozoRes;
               this.mozoAsignado.set(mozo.nombreCompleto || mozo.nombre || 'Desconocido');
