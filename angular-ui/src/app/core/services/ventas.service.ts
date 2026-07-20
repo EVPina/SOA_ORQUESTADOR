@@ -2,6 +2,7 @@ import { environment } from '../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface ProductoResponse {
   id: string;
@@ -63,7 +64,18 @@ export class VentasService {
   private readonly apiUrl = environment.apiUrl + '';
 
   getProductosActivos(): Observable<ApiResponse<ProductoResponse[]>> {
-    return this.http.get<ApiResponse<ProductoResponse[]>>(`${this.apiUrl}/productos/activos`);
+    return this.http.get<ApiResponse<ProductoResponse[]>>(`${this.apiUrl}/productos/activos`).pipe(
+      map(res => {
+        if (res.success && res.data) {
+          res.data.forEach(p => {
+            if (p.imagenUrl && p.imagenUrl.includes('donbelisario.com')) {
+              p.imagenUrl = '';
+            }
+          });
+        }
+        return res;
+      })
+    );
   }
 
   crearPedido(request: PedidoRequest): Observable<ApiResponse<PedidoResponse>> {

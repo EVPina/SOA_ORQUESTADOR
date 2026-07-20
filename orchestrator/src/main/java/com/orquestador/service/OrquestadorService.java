@@ -295,11 +295,25 @@ public class OrquestadorService {
     }
 
     private UUID extractClienteId(Map<String, Object> cliente) {
-        Object id = cliente.get("id");
+        Map<String, Object> data = cliente;
+        if (cliente.containsKey("data") && cliente.get("data") instanceof Map) {
+            data = (Map<String, Object>) cliente.get("data");
+        }
+        Object id = data.get("id");
+        
+        if (id == null) {
+            return UUID.randomUUID();
+        }
+        
+        String idStr = id.toString();
+        if (idStr.startsWith("anonimo-")) {
+            return UUID.randomUUID();
+        }
+        
         if (id instanceof UUID) {
             return (UUID) id;
         }
-        return UUID.fromString((String) id);
+        return UUID.fromString(idStr);
     }
 
     // ==================== OTROS ENDPOINTS ====================
