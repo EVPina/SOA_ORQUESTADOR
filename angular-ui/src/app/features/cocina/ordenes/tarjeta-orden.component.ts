@@ -66,7 +66,8 @@ export class TarjetaOrdenComponent {
           next: () => this.estadoCambiado.emit(),
           error: (err) => {
             console.error('Error sincronizando con Ventas:', err);
-            // Emitimos de todas formas para actualizar UI de cocina
+            alert(`Error crítico: No se pudo sincronizar el estado ${nuevoEstado} con el sistema de Ventas. El cliente no verá el cambio. Por favor avise a soporte. Detalle: ${err.message || 'Error de conexión'}`);
+            // Emitimos de todas formas para actualizar UI de cocina (modo degradado)
             this.estadoCambiado.emit();
           }
         });
