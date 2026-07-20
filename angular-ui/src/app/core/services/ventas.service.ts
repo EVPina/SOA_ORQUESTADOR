@@ -88,7 +88,7 @@ export class VentasService {
   }
 
   getPedidosPorMesa(sesionMesaId: string): Observable<ApiResponse<PedidoResponse[]>> {
-    return this.http.get<ApiResponse<PedidoResponse[]>>(`${this.apiUrl}/pedidos/mesa/${sesionMesaId}/activos`);
+    return this.http.get<ApiResponse<PedidoResponse[]>>(`${this.apiUrl}/pedidos/mesa/${sesionMesaId}/activos?t=${new Date().getTime()}`);
   }
 
   actualizarEstadoPedido(pedidoId: string, estado: string): Observable<ApiResponse<PedidoResponse>> {
