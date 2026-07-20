@@ -13,7 +13,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/orquestador")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
 public class OrquestadorController {
 
     private final OrquestadorService orquestadorService;
