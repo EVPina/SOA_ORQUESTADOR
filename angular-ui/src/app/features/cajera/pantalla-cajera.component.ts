@@ -7,6 +7,7 @@ import { MesasService, MesaResponse } from '../../core/services/mesas.service';
 import { VentasService, PedidoResponse } from '../../core/services/ventas.service';
 import { PagoService, PagoRequest } from '../../core/services/pago.service';
 import { forkJoin, switchMap, catchError, of, map, tap } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 interface MesaOcupada extends MesaResponse {
   sesionMesaId?: string;
@@ -230,7 +231,7 @@ export class PantallaCajeraComponent implements OnInit, OnDestroy {
                   };
 
                   if (sesion.clienteId) {
-                    return this.http.get<any>(`/api/v1/clientes/${sesion.clienteId}`).pipe(
+                    return this.http.get<any>(`${environment.apiUrl}/clientes/${sesion.clienteId}`).pipe(
                       map(clienteRes => {
                         const cliente = clienteRes.data || clienteRes;
                         if (cliente && (cliente.nombre || cliente.apellido)) {
