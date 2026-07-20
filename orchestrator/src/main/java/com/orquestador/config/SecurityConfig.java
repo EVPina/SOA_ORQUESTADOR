@@ -28,9 +28,11 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/orquestador/ping").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/orquestador/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/orquestador/pedido/qr").permitAll()
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
+            .cors(cors -> cors.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
