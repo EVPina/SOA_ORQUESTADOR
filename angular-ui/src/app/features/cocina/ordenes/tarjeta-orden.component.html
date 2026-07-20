@@ -23,10 +23,10 @@
         <span class="font-mono text-yellow-700">⏱ {{ tiempoTranscurrido() }}</span>
       }
       <span class="w-1 h-1 rounded-full bg-[#2E221B]/30"></span>
-      <span>{{ orden().totalItems }} ítems</span>
+      <span>{{ orden().totalItems || orden().detalles?.length || 0 }} ítems</span>
       @if (orden().itemsListos > 0) {
         <span class="w-1 h-1 rounded-full bg-[#2E221B]/30"></span>
-        <span class="text-green-600">{{ orden().itemsListos }}/{{ orden().totalItems }} listos</span>
+        <span class="text-green-600">{{ orden().itemsListos }}/{{ orden().totalItems || orden().detalles?.length || 0 }} listos</span>
       }
     </div>
 
