@@ -74,11 +74,11 @@ import { DecimalPipe, DatePipe, NgClass } from '@angular/common';
                                 [ngClass]="{
                                   'bg-amber-100 text-amber-800 border-amber-200': pedido.estado === 'PENDIENTE',
                                   'bg-blue-100 text-blue-800 border-blue-200': pedido.estado === 'PREPARANDO',
-                                  'bg-emerald-100 text-emerald-800 border-emerald-200': pedido.estado === 'SERVIDO' || pedido.estado === 'LISTO' || pedido.estado === 'ENTREGADO',
-                                  'bg-red-100 text-red-800 border-red-200': pedido.estado === 'CANCELADO',
-                                  'bg-gray-100 text-gray-800 border-gray-200': pedido.estado === 'PAGADO'
+                                  'bg-green-100 text-green-800 border-green-200': pedido.estado === 'LISTO' || pedido.estado === 'ENTREGADO',
+                                  'bg-emerald-100 text-emerald-800 border-emerald-200': pedido.estado === 'SERVIDO',
+                                  'bg-red-100 text-red-800 border-red-200': pedido.estado === 'CANCELADO'
                                 }">
-                            {{ pedido.estado }}
+                            {{ pedido.estado === 'ENTREGADO' ? 'ENTREGADO AL MOZO' : pedido.estado }}
                           </span>
                         </div>
                       </div>
@@ -140,19 +140,19 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
   readonly loading = signal<boolean>(true);
   readonly mesaNumero = signal<number | null>(null);
   private productosMap = new Map<string, string>();
-  
+
   private pollingInterval: any;
 
   ngOnInit() {
     this.cargarDatosMesa();
     this.cargarProductosYPedidos();
-    
+
     // Polling cada 5 segundos
     this.pollingInterval = setInterval(() => {
       this.cargarPedidosSilencioso();
     }, 5000);
   }
-  
+
   ngOnDestroy() {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
@@ -198,7 +198,7 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
 
   cargarPedidosSilencioso() {
     const sesionMesaId = sessionStorage.getItem('current_sesion_mesa_id');
-    
+
     if (!sesionMesaId) {
       this.loading.set(false);
       return;
