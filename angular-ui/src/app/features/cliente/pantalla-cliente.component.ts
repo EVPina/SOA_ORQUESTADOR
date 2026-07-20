@@ -485,9 +485,11 @@ export class PantallaClienteComponent implements OnInit {
     this.ventasService.crearPedidoQR(request).subscribe({
       next: (res) => {
         this.procesandoPedido.set(false);
-        if (res.success) {
+        if (res && res.success) {
           alert('¡Pedido enviado a cocina exitosamente!');
           this.carrito.set([]); // Limpiar carrito
+        } else {
+          alert(res?.message || 'Ocurrió un error al procesar su pedido.');
         }
       },
       error: (err) => {

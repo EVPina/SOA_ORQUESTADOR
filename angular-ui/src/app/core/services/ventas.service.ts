@@ -71,7 +71,8 @@ export class VentasService {
   }
 
   crearPedidoQR(request: any): Observable<ApiResponse<any>> {
-    return this.http.post<ApiResponse<any>>(`/api/orquestador/pedido/qr`, request);
+    const baseUrl = this.apiUrl.replace('/api/v1', '');
+    return this.http.post<ApiResponse<any>>(`${baseUrl}/api/orquestador/pedido/qr`, request);
   }
 
   getPedidosPorMesa(sesionMesaId: string): Observable<ApiResponse<PedidoResponse[]>> {

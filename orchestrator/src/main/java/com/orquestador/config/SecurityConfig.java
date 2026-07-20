@@ -27,6 +27,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/orquestador/health").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/orquestador/ping").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/orquestador/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/orquestador/pedido/qr").permitAll()
                 .requestMatchers("/error").permitAll()
                 .anyRequest().authenticated()
             )
