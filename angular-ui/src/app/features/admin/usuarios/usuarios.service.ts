@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 
 export interface Usuario {
   id: string;
@@ -30,7 +31,7 @@ export class UsuariosService {
   private asignacionesMesas: Record<string, string[]> = {};
 
   getMozos(): Observable<Usuario[]> {
-    return this.http.get<any>('/api/v1/usuarios').pipe(
+    return this.http.get<any>(`${environment.apiUrl}/usuarios`).pipe(
       map(response => {
         let usuarios: any[] = [];
         if (Array.isArray(response)) {
@@ -62,7 +63,7 @@ export class UsuariosService {
   }
 
   getAsignacionesPorMozo(mozoId: string): Observable<string[]> {
-    return this.http.get<any[]>(`/api/v1/asignaciones-mozo/mozo/${mozoId}`).pipe(
+    return this.http.get<any[]>(`${environment.apiUrl}/asignaciones-mozo/mozo/${mozoId}`).pipe(
       map(asignaciones => asignaciones.map(a => a.mesaId)),
       catchError(err => {
         console.error(`Error obteniendo asignaciones para mozo ${mozoId}`, err);
@@ -72,7 +73,7 @@ export class UsuariosService {
   }
 
   getAllUsuarios(): Observable<Usuario[]> {
-    return this.http.get<any>('/api/v1/usuarios').pipe(
+    return this.http.get<any>(`${environment.apiUrl}/usuarios`).pipe(
       map(response => {
         let usuarios: any[] = [];
         if (Array.isArray(response)) {
@@ -100,23 +101,23 @@ export class UsuariosService {
   }
 
   crearUsuario(payload: UsuarioPayload): Observable<Usuario> {
-    return this.http.post<Usuario>('/api/v1/usuarios', payload);
+    return this.http.post<Usuario>(`${environment.apiUrl}/usuarios`, payload);
   }
 
   actualizarUsuario(id: string, payload: UsuarioPayload): Observable<Usuario> {
-    return this.http.put<Usuario>(`/api/v1/usuarios/${id}`, payload);
+    return this.http.put<Usuario>(`${environment.apiUrl}/usuarios/${id}`, payload);
   }
 
   eliminarUsuario(id: string): Observable<void> {
-    return this.http.delete<void>(`/api/v1/usuarios/${id}`);
+    return this.http.delete<void>(`${environment.apiUrl}/usuarios/${id}`);
   }
 
   cambiarRol(id: string, rol: string): Observable<Usuario> {
-    return this.http.put<Usuario>(`/api/v1/usuarios/${id}/rol`, null, { params: { rol } });
+    return this.http.put<Usuario>(`${environment.apiUrl}/usuarios/${id}/rol`, null, { params: { rol } });
   }
 
   getUsuarioById(id: string): Observable<Usuario> {
-    return this.http.get<any>(`/api/v1/usuarios/${id}`).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/usuarios/${id}`).pipe(
       map(response => {
         const u = response.data ? response.data : response;
         return {
@@ -143,7 +144,7 @@ export class UsuariosService {
   }
 
   getClienteById(id: string): Observable<Usuario> {
-    return this.http.get<any>(`/api/v1/clientes/${id}`).pipe(
+    return this.http.get<any>(`${environment.apiUrl}/clientes/${id}`).pipe(
       map(response => {
         const u = response.data ? response.data : response;
         return {
@@ -163,7 +164,7 @@ export class UsuariosService {
   }
 
   asignarMesa(mozoId: string, mesaId: string): Observable<any> {
-    return this.http.post('/api/v1/asignaciones-mozo', { mozoId, mesaId }).pipe(
+    return this.http.post(`${environment.apiUrl}/asignaciones-mozo`, { mozoId, mesaId }).pipe(
       catchError(err => {
         console.error('Error al asignar mesa', err);
         throw err;
@@ -172,7 +173,7 @@ export class UsuariosService {
   }
 
   desasignarMesa(mozoId: string, mesaId: string): Observable<any> {
-    return this.http.delete(`/api/v1/asignaciones-mozo/mozo/${mozoId}/mesa/${mesaId}`).pipe(
+    return this.http.delete(`${environment.apiUrl}/asignaciones-mozo/mozo/${mozoId}/mesa/${mesaId}`).pipe(
       catchError(err => {
         console.error('Error al desasignar mesa', err);
         throw err;

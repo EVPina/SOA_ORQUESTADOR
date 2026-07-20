@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 
 export interface Mesa {
   id: string;
@@ -26,7 +27,7 @@ export class MesasService {
   private readonly http = inject(HttpClient);
 
   getMesas(): Observable<Mesa[]> {
-    return this.http.get<Mesa[]>('/api/v1/mesas').pipe(
+    return this.http.get<Mesa[]>(`${environment.apiUrl}/mesas`).pipe(
       catchError(err => {
         console.error('Error obteniendo mesas', err);
         return of([]);
@@ -35,6 +36,6 @@ export class MesasService {
   }
 
   getQrMesa(mesaId: string): Observable<MesaQr> {
-    return this.http.get<MesaQr>(`/api/v1/menu/qr/mesa/${mesaId}`);
+    return this.http.get<MesaQr>(`${environment.apiUrl}/menu/qr/mesa/${mesaId}`);
   }
 }
