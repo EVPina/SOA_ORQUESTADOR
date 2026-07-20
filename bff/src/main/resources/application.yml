@@ -7,7 +7,8 @@ spring:
   cloud:
     gateway:
       default-filters:
-        - DedupeResponseHeader=Access-Control-Allow-Origin Access-Control-Allow-Credentials, RETAIN_FIRST
+        - RemoveResponseHeader=Access-Control-Allow-Origin
+        - RemoveResponseHeader=Access-Control-Allow-Credentials
         - RemoveRequestHeader=Origin
       routes:
         - id: api-gateway
