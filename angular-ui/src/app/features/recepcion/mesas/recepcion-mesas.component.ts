@@ -145,7 +145,7 @@ import { MesasService, Mesa, MesaQr } from './mesas.service';
                         </div>
                       }
                       
-                      <div class="text-gray-400 text-xs font-medium">Capacidad: {{ mesa.capacidadMaxima }}</div>
+                      <div class="text-gray-400 text-xs font-medium">Capacidad: {{ mesa.capacidadMaxima || mesa.capacidad || 'N/A' }}</div>
 
                       <button
                         (click)="verQr(mesa)"

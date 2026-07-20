@@ -7,7 +7,8 @@ import { environment } from '../../../../environments/environment';
 export interface Mesa {
   id: string;
   numero: number;
-  capacidadMaxima: number;
+  capacidadMaxima?: number;
+  capacidad?: number;
   estado: string; // "LIBRE", "OCUPADA"
   ocupacionActual: number;
   zona?: {
