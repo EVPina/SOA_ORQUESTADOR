@@ -39,9 +39,9 @@ export class CategoriaIconoComponent {
   selector: 'app-pantalla-cliente',
   imports: [SidebarComponent, DecimalPipe, TitleCasePipe, UpperCasePipe, CategoriaIconoComponent],
   template: `
-    <div class="flex h-dvh bg-[#F8F7F2] font-sans">
+    <div class="flex h-dvh bg-[#F8F7F2] font-sans pb-16 md:pb-0">
       <!-- Sidebar / Navbar lateral -->
-      <app-sidebar class="w-64 flex-shrink-0" />
+      <app-sidebar class="hidden md:block w-64 flex-shrink-0" />
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -181,12 +181,34 @@ export class CategoriaIconoComponent {
             </div>
           </div>
 
-          <!-- Cart Sidebar -->
-          <div class="w-[400px] bg-white border-l border-[#2E221B]/10 flex flex-col flex-shrink-0 z-20 shadow-2xl relative">
+          <!-- Mobile Cart FAB -->
+          <button 
+            class="md:hidden fixed bottom-20 right-4 bg-[#B71C1C] text-white p-4 rounded-full shadow-2xl z-40 flex items-center justify-center transition-transform active:scale-95"
+            (click)="cartOpen.set(!cartOpen())"
+          >
+            <div class="relative">
+              <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+              @if (totalItems() > 0) {
+                <span class="absolute -top-2 -right-3 bg-amber-400 text-[#2E221B] text-xs font-black w-6 h-6 rounded-full flex items-center justify-center shadow-md border-2 border-[#B71C1C]">{{ totalItems() }}</span>
+              }
+            </div>
+          </button>
+
+          <!-- Cart Sidebar / Mobile Drawer -->
+          <div class="bg-white border-l border-[#2E221B]/10 flex flex-col flex-shrink-0 z-50 shadow-2xl transition-transform duration-300 ease-in-out fixed inset-y-0 right-0 w-[85%] max-w-[400px] md:relative md:w-[400px] md:translate-x-0"
+               [class]="cartOpen() ? 'translate-x-0' : 'translate-x-full'">
+            
+            <!-- Mobile Overlay Background -->
+            @if (cartOpen()) {
+              <div class="md:hidden fixed inset-0 bg-black/40 -z-10 w-screen h-screen -translate-x-[15%]" (click)="cartOpen.set(false)"></div>
+            }
             
             <!-- Cart Header -->
-            <div class="p-6 bg-[#2E221B] text-white">
-              <h2 class="text-xl font-black flex items-center gap-3">
+            <div class="p-5 sm:p-6 bg-[#2E221B] text-white relative">
+              <button class="md:hidden absolute top-1/2 -translate-y-1/2 right-4 text-white/70 hover:text-white p-2 rounded-lg bg-white/5" (click)="cartOpen.set(false)">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+              </button>
+              <h2 class="text-lg sm:text-xl font-black flex items-center gap-3">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                 MI PEDIDO
                 <span class="ml-auto bg-[#B71C1C] text-white text-xs px-3 py-1 rounded-full font-bold shadow-inner border border-white/20">{{ totalItems() }} items</span>
@@ -287,6 +309,8 @@ export class PantallaClienteComponent implements OnInit {
   readonly mesaNumero = signal<number | null>(null);
   readonly nombreMozo = signal<string | null>(null);
   readonly zona = signal<string>('');
+  
+  readonly cartOpen = signal(false);
   
   // Productos y Categorías
   readonly productos = signal<ProductoResponse[]>([]);

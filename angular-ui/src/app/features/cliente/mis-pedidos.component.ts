@@ -10,9 +10,9 @@ import { DecimalPipe, DatePipe, NgClass } from '@angular/common';
   standalone: true,
   imports: [SidebarComponent, DecimalPipe, NgClass],
   template: `
-    <div class="flex h-dvh bg-[#F8F7F2] font-sans">
+    <div class="flex h-dvh bg-[#F8F7F2] font-sans pb-16 md:pb-0">
       <!-- Sidebar / Navbar lateral -->
-      <app-sidebar class="w-64 flex-shrink-0" />
+      <app-sidebar class="hidden md:block w-64 flex-shrink-0" />
 
       <!-- Main Content -->
       <main class="flex-1 flex flex-col h-full overflow-hidden relative">
