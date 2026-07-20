@@ -41,9 +41,12 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             new PublicRoute(HttpMethod.GET, "/api/v1/asignaciones-mozo/mesa/*"),
             new PublicRoute(HttpMethod.GET, "/api/v1/usuarios/*"),
             new PublicRoute(HttpMethod.GET, "/api/v1/menu/**"),
+            new PublicRoute(HttpMethod.GET, "/api/v1/productos/activos"),
+            new PublicRoute(HttpMethod.GET, "/api/v1/pedidos/mesa/*/activos"),
             new PublicRoute(HttpMethod.GET, "/api/orquestador/health"),
             new PublicRoute(HttpMethod.GET, "/api/orquestador/ping"),
             new PublicRoute(HttpMethod.POST, "/api/orquestador/auth/login"),
+            new PublicRoute(HttpMethod.POST, "/api/orquestador/pedido/qr"),
             new PublicRoute(HttpMethod.POST, "/api/v1/sesiones-mesa/iniciar"),
             new PublicRoute(HttpMethod.PUT, "/api/v1/sesiones-mesa/*/finalizar")
     );

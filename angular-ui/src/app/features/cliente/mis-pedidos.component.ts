@@ -144,9 +144,8 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
   private pollingInterval: any;
 
   ngOnInit() {
-    this.cargarProductos();
     this.cargarDatosMesa();
-    this.cargarPedidos();
+    this.cargarProductosYPedidos();
     
     // Polling cada 5 segundos
     this.pollingInterval = setInterval(() => {
@@ -177,12 +176,17 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
     }
   }
 
-  cargarProductos() {
+  cargarProductosYPedidos() {
+    this.loading.set(true);
     this.ventasService.getProductosActivos().subscribe({
       next: (res) => {
         if (res.success && res.data) {
           res.data.forEach(p => this.productosMap.set(p.id, p.nombre));
         }
+        this.cargarPedidosSilencioso();
+      },
+      error: () => {
+        this.cargarPedidosSilencioso();
       }
     });
   }

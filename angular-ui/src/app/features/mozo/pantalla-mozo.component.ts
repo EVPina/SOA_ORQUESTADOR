@@ -192,8 +192,7 @@ export class PantallaMozoComponent implements OnInit, OnDestroy {
   private pollingInterval: any;
 
   ngOnInit() {
-    this.cargarProductos();
-    this.cargarDatos();
+    this.cargarProductosYDatos();
     
     // Polling cada 5 segundos para actualizar los pedidos de las mesas
     this.pollingInterval = setInterval(() => {
@@ -206,13 +205,17 @@ export class PantallaMozoComponent implements OnInit, OnDestroy {
       clearInterval(this.pollingInterval);
     }
   }
-
-  cargarProductos() {
+  cargarProductosYDatos() {
+    this.loading.set(true);
     this.ventasService.getProductosActivos().subscribe({
       next: (res) => {
         if (res.success && res.data) {
           res.data.forEach(p => this.productosMap.set(p.id, p.nombre));
         }
+        this.cargarDatos();
+      },
+      error: () => {
+        this.cargarDatos();
       }
     });
   }
