@@ -65,11 +65,19 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             return reject(exchange, "Falta el token de autenticación");
         }
 
+        String token = authHeader.substring(7);
+
+        // Si el token NO contiene puntos (.), asumimos que es un UUID (Token temporal de Cliente)
+        // y lo dejamos pasar sin intentar parsearlo como JWT.
+        if (!token.contains(".")) {
+            return chain.filter(exchange);
+        }
+
         try {
             Jwts.parser()
                     .verifyWith(signingKey())
                     .build()
-                    .parseSignedClaims(authHeader.substring(7));
+                    .parseSignedClaims(token);
         } catch (JwtException | IllegalArgumentException e) {
             return reject(exchange, "Token inválido o expirado");
         }
