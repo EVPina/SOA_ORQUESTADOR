@@ -188,9 +188,11 @@ export class PantallaMozoComponent implements OnInit, OnDestroy {
 
   readonly loading = signal(true);
   readonly mesas = signal<MesaAsignada[]>([]);
+  private productosMap = new Map<string, string>();
   private pollingInterval: any;
 
   ngOnInit() {
+    this.cargarProductos();
     this.cargarDatos();
     
     // Polling cada 5 segundos para actualizar los pedidos de las mesas
@@ -204,6 +206,17 @@ export class PantallaMozoComponent implements OnInit, OnDestroy {
       clearInterval(this.pollingInterval);
     }
   }
+
+  cargarProductos() {
+    this.ventasService.getProductosActivos().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          res.data.forEach(p => this.productosMap.set(p.id, p.nombre));
+        }
+      }
+    });
+  }
+
   cargarDatos() {
     const user = this.authService.user();
     if (!user) return;
@@ -266,7 +279,14 @@ export class PantallaMozoComponent implements OnInit, OnDestroy {
         ).subscribe({
           next: (res) => {
             if (res.success) {
-              mesa.pedidosActivos = res.data;
+              mesa.pedidosActivos = res.data.map(pedido => {
+                pedido.detalles?.forEach(d => {
+                  if (!d.productoNombre) {
+                    d.productoNombre = this.productosMap.get(d.productoId) || 'Producto no encontrado';
+                  }
+                });
+                return pedido;
+              });
               // Fetch client name for each order
               mesa.pedidosActivos.forEach(pedido => {
                 if (pedido.clienteId) {

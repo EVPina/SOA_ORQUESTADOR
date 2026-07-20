@@ -139,10 +139,12 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
   readonly pedidos = signal<PedidoResponse[]>([]);
   readonly loading = signal<boolean>(true);
   readonly mesaNumero = signal<number | null>(null);
+  private productosMap = new Map<string, string>();
   
   private pollingInterval: any;
 
   ngOnInit() {
+    this.cargarProductos();
     this.cargarDatosMesa();
     this.cargarPedidos();
     
@@ -175,6 +177,16 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
     }
   }
 
+  cargarProductos() {
+    this.ventasService.getProductosActivos().subscribe({
+      next: (res) => {
+        if (res.success && res.data) {
+          res.data.forEach(p => this.productosMap.set(p.id, p.nombre));
+        }
+      }
+    });
+  }
+
   cargarPedidos() {
     this.loading.set(true);
     this.cargarPedidosSilencioso();
@@ -191,8 +203,17 @@ export class MisPedidosComponent implements OnInit, OnDestroy {
     this.ventasService.getPedidosPorMesa(sesionMesaId).subscribe({
       next: (res) => {
         if (res.success) {
+          // Asignar nombres de productos si faltan en la respuesta
+          const pedidosConNombres = res.data.map(pedido => {
+            pedido.detalles?.forEach(d => {
+              if (!d.productoNombre) {
+                d.productoNombre = this.productosMap.get(d.productoId) || 'Producto no encontrado';
+              }
+            });
+            return pedido;
+          });
           // Ordenar por más recientes (asumiendo que los últimos vienen al final o por fecha)
-          this.pedidos.set(res.data.reverse());
+          this.pedidos.set(pedidosConNombres.reverse());
         }
         this.loading.set(false);
       },
