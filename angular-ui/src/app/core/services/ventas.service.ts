@@ -64,18 +64,7 @@ export class VentasService {
   private readonly apiUrl = environment.apiUrl + '';
 
   getProductosActivos(): Observable<ApiResponse<ProductoResponse[]>> {
-    return this.http.get<ApiResponse<ProductoResponse[]>>(`${this.apiUrl}/productos/activos`).pipe(
-      map(res => {
-        if (res.success && res.data) {
-          res.data.forEach(p => {
-            if (p.imagenUrl && p.imagenUrl.includes('donbelisario.com')) {
-              p.imagenUrl = '';
-            }
-          });
-        }
-        return res;
-      })
-    );
+    return this.http.get<ApiResponse<ProductoResponse[]>>(`${this.apiUrl}/productos/activos`);
   }
 
   crearPedido(request: PedidoRequest): Observable<ApiResponse<PedidoResponse>> {
