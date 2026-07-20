@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from './auth.service';
@@ -16,14 +16,14 @@ declare const google: any;
   template: `
     <div class="min-h-screen bg-[#F8F7F2] flex items-center justify-center p-4">
       <div class="w-full max-w-md">
-        <div class="bg-white rounded-2xl shadow-lg shadow-black/5 p-8">
-          <div class="text-center mb-8">
+        <div class="bg-white rounded-2xl shadow-lg shadow-black/5 p-6 sm:p-8">
+          <div class="text-center mb-6 sm:mb-8">
             <img src="assets/images/donbelisario.png"
                  alt="Don Belisario"
-                 class="w-24 h-24 mx-auto mb-4 rounded-full object-cover shadow-md"
+                 class="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-4 rounded-full object-cover shadow-md"
                  onerror="this.style.display='none'">
-            <h1 class="text-2xl font-bold text-[#2E221B]">Don Belisario</h1>
-            <p class="text-[#2E221B]/60 mt-1">Inicia sesión para continuar</p>
+            <h1 class="text-2xl sm:text-3xl font-bold text-[#2E221B]">Don Belisario</h1>
+            <p class="text-[#2E221B]/60 mt-1 text-sm sm:text-base">Inicia sesión para continuar</p>
           </div>
 
           @if (error()) {
@@ -33,7 +33,7 @@ declare const google: any;
           }
 
           @if (mesaIdDetectada()) {
-            <div class="bg-[#F8F7F2] border border-[#2E221B]/10 p-5 rounded-2xl mb-6 shadow-sm relative overflow-hidden">
+            <div class="bg-[#F8F7F2] border border-[#2E221B]/10 p-4 sm:p-5 rounded-2xl mb-6 shadow-sm relative overflow-hidden">
               <!-- Decorative background element -->
               <div class="absolute -right-4 -top-4 text-[#B71C1C]/5 w-24 h-24 transform rotate-12">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24">
@@ -41,9 +41,9 @@ declare const google: any;
                 </svg>
               </div>
               
-              <div class="flex flex-col gap-4 relative z-10">
-                <div class="flex items-center gap-3">
-                  <div class="bg-[#B71C1C] p-2.5 rounded-xl text-white shadow-sm">
+              <div class="flex flex-col gap-3 sm:gap-4 relative z-10">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  <div class="bg-[#B71C1C] p-2.5 rounded-xl text-white shadow-sm shrink-0">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z" />
                     </svg>
@@ -55,17 +55,17 @@ declare const google: any;
                 </div>
                 
                 @if (mesaNumero() || mozoAsignado()) {
-                  <div class="bg-white rounded-xl p-3.5 flex flex-col gap-3 shadow-sm border border-[#2E221B]/5">
+                  <div class="bg-white rounded-xl p-3 sm:p-3.5 flex flex-col gap-2 sm:gap-3 shadow-sm border border-[#2E221B]/5">
                     @if (mesaNumero()) {
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-[#2E221B]/5 flex items-center justify-center text-[#B71C1C]">
+                        <div class="w-8 h-8 rounded-lg bg-[#2E221B]/5 flex items-center justify-center text-[#B71C1C] shrink-0">
                           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01" />
                           </svg>
                         </div>
-                        <div>
+                        <div class="overflow-hidden">
                           <span class="text-xs uppercase tracking-wider font-bold text-[#2E221B]/50 block">Ubicación</span>
-                          <span class="font-bold text-[#2E221B]">Mesa #{{ mesaNumero() }}</span>
+                          <span class="font-bold text-[#2E221B] truncate">Mesa #{{ mesaNumero() }}</span>
                         </div>
                       </div>
                     }
@@ -76,14 +76,14 @@ declare const google: any;
 
                     @if (mozoAsignado()) {
                       <div class="flex items-center gap-3">
-                        <div class="w-8 h-8 rounded-lg bg-[#B71C1C]/10 flex items-center justify-center text-[#B71C1C]">
+                        <div class="w-8 h-8 rounded-lg bg-[#B71C1C]/10 flex items-center justify-center text-[#B71C1C] shrink-0">
                           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                           </svg>
                         </div>
-                        <div>
+                        <div class="overflow-hidden">
                           <span class="text-xs uppercase tracking-wider font-bold text-[#2E221B]/50 block">Mozo Asignado</span>
-                          <span class="font-bold text-[#2E221B] capitalize">{{ mozoAsignado() }}</span>
+                          <span class="font-bold text-[#2E221B] capitalize truncate block">{{ mozoAsignado() }}</span>
                         </div>
                       </div>
                     }
@@ -103,7 +103,7 @@ declare const google: any;
                 name="email"
                 required
                 placeholder="ej: carlos@email.com"
-                class="w-full px-4 py-2.5 border border-[#2E221B]/20 rounded-lg focus:ring-2 focus:ring-[#B71C1C]/30 focus:border-[#B71C1C] outline-none transition-all text-[#2E221B] placeholder-[#2E221B]/40">
+                class="w-full px-4 py-2.5 border border-[#2E221B]/20 rounded-lg focus:ring-2 focus:ring-[#B71C1C]/30 focus:border-[#B71C1C] outline-none transition-all text-[#2E221B] placeholder-[#2E221B]/40 text-base">
             </div>
             <div>
               <label for="password" class="block text-sm font-medium text-[#2E221B]/80 mb-1">Contraseña</label>
@@ -115,7 +115,7 @@ declare const google: any;
                   name="password"
                   required
                   placeholder="••••••••"
-                  class="w-full px-4 py-2.5 pr-10 border border-[#2E221B]/20 rounded-lg focus:ring-2 focus:ring-[#B71C1C]/30 focus:border-[#B71C1C] outline-none transition-all text-[#2E221B] placeholder-[#2E221B]/40">
+                  class="w-full px-4 py-2.5 pr-10 border border-[#2E221B]/20 rounded-lg focus:ring-2 focus:ring-[#B71C1C]/30 focus:border-[#B71C1C] outline-none transition-all text-[#2E221B] placeholder-[#2E221B]/40 text-base">
                 <button type="button" (click)="showPassword.set(!showPassword())"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-[#2E221B]/50 hover:text-[#2E221B]/80 transition-colors">
                   @if (showPassword()) {
@@ -135,7 +135,7 @@ declare const google: any;
             </div>
             <button type="submit"
                     [disabled]="loading()"
-                    class="w-full bg-[#B71C1C] hover:bg-[#9b1515] disabled:bg-[#B71C1C]/50 text-white font-semibold py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-6">
+                    class="w-full bg-[#B71C1C] hover:bg-[#9b1515] disabled:bg-[#B71C1C]/50 text-white font-semibold py-3 sm:py-2.5 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 mt-6 text-base">
               @if (loading()) {
                 <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/>
@@ -150,22 +150,22 @@ declare const google: any;
 
           <div class="flex items-center gap-3 my-6">
             <div class="h-px bg-[#2E221B]/10 flex-1"></div>
-            <span class="text-xs uppercase tracking-wider text-[#2E221B]/40 font-medium">o continúa con</span>
+            <span class="text-xs uppercase tracking-wider text-[#2E221B]/40 font-medium whitespace-nowrap">o continúa con</span>
             <div class="h-px bg-[#2E221B]/10 flex-1"></div>
           </div>
 
-          <div id="google-signin-button" class="flex justify-center"></div>
+          <div id="google-signin-button" class="flex justify-center w-full overflow-hidden"></div>
 
           <p class="text-center mt-6 text-sm text-[#2E221B]/60">
             ¿No tienes cuenta?
-            <a routerLink="/registro" class="text-[#B71C1C] hover:text-[#9b1515] font-medium hover:underline">Regístrate aquí</a>
+            <a routerLink="/registro" class="text-[#B71C1C] hover:text-[#9b1515] font-medium hover:underline block sm:inline mt-1 sm:mt-0">Regístrate aquí</a>
           </p>
         </div>
       </div>
     </div>
   `,
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
@@ -200,6 +200,22 @@ export class LoginComponent implements OnInit {
     });
 
     this.initGoogleSignIn();
+    
+    // Escuchar cambios de tamaño de ventana para ajustar el botón de Google
+    window.addEventListener('resize', this.handleResize.bind(this));
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('resize', this.handleResize.bind(this));
+  }
+
+  private handleResize(): void {
+    const container = document.getElementById('google-signin-button');
+    if (container && container.innerHTML) {
+      // Re-render button if window size changes significantly
+      container.innerHTML = '';
+      this.renderGoogleButton();
+    }
   }
 
   private initGoogleSignIn(intentos = 20): void {
@@ -214,10 +230,22 @@ export class LoginComponent implements OnInit {
       callback: (resp: { credential: string }) => this.onGoogleCredential(resp.credential),
     });
 
+    this.renderGoogleButton();
+  }
+
+  private renderGoogleButton(): void {
+    if (typeof google === 'undefined') return;
+    
+    // Calcular ancho disponible (ancho de ventana - padding del contenedor - margen de seguridad)
+    const paddingContainer = window.innerWidth < 640 ? 48 : 64; // p-6 o p-8
+    const marginPantalla = 32; // p-4
+    const maxWidth = window.innerWidth - paddingContainer - marginPantalla;
+    const buttonWidth = Math.min(320, maxWidth > 200 ? maxWidth : 200);
+
     google.accounts.id.renderButton(document.getElementById('google-signin-button'), {
       theme: 'outline',
       size: 'large',
-      width: 320,
+      width: buttonWidth,
       text: 'continue_with',
     });
   }
