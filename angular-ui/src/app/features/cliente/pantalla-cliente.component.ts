@@ -6,6 +6,7 @@ import { AuthService } from '../auth/auth.service';
 import { MesasService } from '../../core/services/mesas.service';
 import { VentasService, ProductoResponse, PedidoRequest, DetallePedidoRequest } from '../../core/services/ventas.service';
 import { DecimalPipe, TitleCasePipe, UpperCasePipe } from '@angular/common';
+import { environment } from '../../../environments/environment';
 
 interface CartItem {
   producto: ProductoResponse;
@@ -126,7 +127,7 @@ export class CategoriaIconoComponent {
                           <!-- Image -->
                           <div class="w-32 h-32 rounded-2xl bg-[#F8F7F2] overflow-hidden relative shrink-0">
                             @if (prod.imagenUrl) {
-                              <img [src]="prod.imagenUrl" [alt]="prod.nombre" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                              <img [src]="prod.imagenUrl" [alt]="prod.nombre" (error)="prod.imagenUrl = ''" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
                             } @else {
                               <div class="w-full h-full flex items-center justify-center text-[#2E221B]/20 p-8">
                                 <app-categoria-icono [categoria]="grupo.categoria" />
@@ -342,12 +343,12 @@ export class PantallaClienteComponent implements OnInit {
             });
             
             // Cargar el mozo asignado a la mesa
-            this.http.get<any>(`/api/v1/asignaciones-mozo/mesa/${sesion.mesaId}`).subscribe({
+            this.http.get<any>(`${environment.apiUrl}/asignaciones-mozo/mesa/${sesion.mesaId}`).subscribe({
               next: (res) => {
                 const asignaciones = res.data ? res.data : res;
                 if (Array.isArray(asignaciones) && asignaciones.length > 0) {
                   const mozoId = asignaciones[0].mozoId;
-                  this.http.get<any>(`/api/v1/usuarios/${mozoId}`).subscribe({
+                  this.http.get<any>(`${environment.apiUrl}/usuarios/${mozoId}`).subscribe({
                     next: (mozoRes) => {
                       const mozo = mozoRes.data ? mozoRes.data : mozoRes;
                       this.nombreMozo.set(mozo.nombreCompleto || mozo.nombre || 'Desconocido');
