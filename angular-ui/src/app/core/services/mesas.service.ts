@@ -1,3 +1,4 @@
+import { environment } from '../../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -36,7 +37,7 @@ export interface MesaResponse {
 })
 export class MesasService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = '/api/v1';
+  private readonly apiUrl = environment.apiUrl + '';
 
   iniciarSesionMesa(request: SesionMesaRequest): Observable<SesionMesaResponse> {
     return this.http.post<any>(`${this.apiUrl}/sesiones-mesa/iniciar`, request).pipe(
@@ -74,3 +75,4 @@ export class MesasService {
     );
   }
 }
+

@@ -1,3 +1,4 @@
+import { environment } from '../../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -56,3 +57,4 @@ export class CocinaService {
     return map[estado] || 'activas';
   }
 }
+

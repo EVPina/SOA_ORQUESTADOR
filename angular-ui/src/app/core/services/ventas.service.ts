@@ -1,3 +1,4 @@
+import { environment } from '../../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -59,7 +60,7 @@ export interface PedidoResponse {
 })
 export class VentasService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = '/api/v1';
+  private readonly apiUrl = environment.apiUrl + '';
 
   getProductosActivos(): Observable<ApiResponse<ProductoResponse[]>> {
     return this.http.get<ApiResponse<ProductoResponse[]>>(`${this.apiUrl}/productos/activos`);
@@ -89,3 +90,4 @@ export class VentasService {
     return this.http.get<ApiResponse<PedidoResponse[]>>(`${this.apiUrl}/pedidos/estado/${estado}`);
   }
 }
+

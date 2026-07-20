@@ -1,3 +1,4 @@
+import { environment } from '../../../../environments/environment';
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
@@ -24,7 +25,7 @@ export interface PagoResponse {
 })
 export class PagoService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = '/api/v1/pagos';
+  private readonly apiUrl = environment.apiUrl + '/pagos';
 
   registrarPago(request: PagoRequest): Observable<PagoResponse> {
     return this.http.post<any>(`${this.apiUrl}`, request).pipe(
@@ -32,3 +33,4 @@ export class PagoService {
     );
   }
 }
+
