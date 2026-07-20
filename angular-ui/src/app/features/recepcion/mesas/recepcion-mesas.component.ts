@@ -185,9 +185,9 @@ import { MesasService, Mesa, MesaQr } from './mesas.service';
               <div class="w-64 h-64 flex items-center justify-center">
                 <div class="w-10 h-10 border-4 border-red-200 border-t-[#B71C1C] rounded-full animate-spin"></div>
               </div>
-            } @else if (mesaQrSeleccionada(); as mesaQr) {
-              <img [src]="mesaQr.qrCode" alt="QR Mesa" class="w-64 h-64 rounded-xl border border-gray-100 shadow-sm" />
-              <p class="text-xs text-gray-400 text-center break-all">{{ mesaQr.url }}</p>
+            } @else if (mesaQrSeleccionada(); as qrUrl) {
+              <img [src]="'https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=' + encodeUrl(qrUrl)" alt="QR Mesa" class="w-64 h-64 rounded-xl border border-gray-100 shadow-sm" />
+              <p class="text-xs text-gray-400 text-center break-all">{{ qrUrl }}</p>
             } @else {
               <p class="text-sm text-red-500 text-center py-8">No se pudo generar el código QR.</p>
             }
@@ -219,7 +219,7 @@ export class RecepcionMesasComponent implements OnInit {
 
   // Modal QR
   readonly mesaSeleccionada = signal<Mesa | null>(null);
-  readonly mesaQrSeleccionada = signal<MesaQr | null>(null);
+  readonly mesaQrSeleccionada = signal<string | null>(null);
   readonly cargandoQr = signal(false);
 
   // Zonas únicas extraídas de las mesas
@@ -272,21 +272,22 @@ export class RecepcionMesasComponent implements OnInit {
     });
   }
 
+  encodeUrl(url: string): string {
+    return encodeURIComponent(url);
+  }
+
   verQr(mesa: Mesa) {
     this.mesaSeleccionada.set(mesa);
-    this.mesaQrSeleccionada.set(null);
     this.cargandoQr.set(true);
 
-    this.mesasService.getQrMesa(mesa.id).subscribe({
-      next: (qr) => {
-        this.mesaQrSeleccionada.set(qr);
-        this.cargandoQr.set(false);
-      },
-      error: (err) => {
-        console.error('Error obteniendo QR de la mesa', err);
-        this.cargandoQr.set(false);
-      },
-    });
+    // Generar la URL basada en el dominio actual donde está el frontend
+    const url = `${window.location.origin}/login?mesaId=${mesa.id}`;
+    
+    // Simulamos un pequeño retraso para la UI
+    setTimeout(() => {
+      this.mesaQrSeleccionada.set(url);
+      this.cargandoQr.set(false);
+    }, 300);
   }
 
   cerrarQr() {
