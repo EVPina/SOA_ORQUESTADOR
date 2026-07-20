@@ -445,17 +445,8 @@ public class OrquestadorService {
 
     // Método auxiliar para actualizar Ventas y descontar stock
    private Mono<Map<String, Object>> actualizarVentasYStock(Map<String, Object> detalleActualizado, String nuevoEstado, UUID pedidoId) {
-    // Mapear estados de cocina a estados que ve el cliente
-    String estadoVentas;
-    switch (nuevoEstado) {
-        case "PENDIENTE" -> estadoVentas = "PENDIENTE";
-        case "PREPARANDO" -> estadoVentas = "EN_COCINA";
-        case "LISTO" -> estadoVentas = "EN_COCINA";
-        case "ENTREGADO" -> estadoVentas = "SERVIDO";
-        case "PAGADO" -> estadoVentas = "PAGADO";
-        case "CANCELADO" -> estadoVentas = "CANCELADO";
-        default -> estadoVentas = "EN_COCINA";
-    }
+    // Usar el mismo estado de cocina para ventas ya que ahora coinciden
+    String estadoVentas = nuevoEstado;
 
     log.info("Actualizando pedido en ventas: pedidoId={}, estadoVentas={}", pedidoId, estadoVentas);
 
