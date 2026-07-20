@@ -60,20 +60,9 @@ export class TarjetaOrdenComponent {
     };
 
     this.cocinaService.actualizarEstado(ordenActual.id, request).subscribe(() => {
-      // Sincronizar con el microservicio de Ventas
-      if (ordenActual.pedidoId) {
-        this.ventasService.actualizarEstadoPedido(ordenActual.pedidoId, nuevoEstado).subscribe({
-          next: () => this.estadoCambiado.emit(),
-          error: (err) => {
-            console.error('Error sincronizando con Ventas:', err);
-            alert(`Error crítico: No se pudo sincronizar el estado ${nuevoEstado} con el sistema de Ventas. El cliente no verá el cambio. Por favor avise a soporte. Detalle: ${err.message || 'Error de conexión'}`);
-            // Emitimos de todas formas para actualizar UI de cocina (modo degradado)
-            this.estadoCambiado.emit();
-          }
-        });
-      } else {
-        this.estadoCambiado.emit();
-      }
+      // El backend de Cocina ahora se encarga de avisar a Ventas internamente.
+      // El frontend solo debe preocuparse por actualizar la UI.
+      this.estadoCambiado.emit();
     });
   }
 }
