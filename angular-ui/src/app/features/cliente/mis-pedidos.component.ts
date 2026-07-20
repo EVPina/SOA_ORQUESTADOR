@@ -73,12 +73,12 @@ import { DecimalPipe, DatePipe, NgClass } from '@angular/common';
                           <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border"
                                 [ngClass]="{
                                   'bg-amber-100 text-amber-800 border-amber-200': pedido.estado === 'PENDIENTE',
-                                  'bg-blue-100 text-blue-800 border-blue-200': pedido.estado === 'PREPARANDO',
-                                  'bg-green-100 text-green-800 border-green-200': pedido.estado === 'LISTO' || pedido.estado === 'ENTREGADO',
+                                  'bg-blue-100 text-blue-800 border-blue-200': ['PREPARANDO', 'LISTO', 'ENTREGADO', 'EN_COCINA'].includes(pedido.estado),
                                   'bg-emerald-100 text-emerald-800 border-emerald-200': pedido.estado === 'SERVIDO',
-                                  'bg-red-100 text-red-800 border-red-200': pedido.estado === 'CANCELADO'
+                                  'bg-red-100 text-red-800 border-red-200': pedido.estado === 'CANCELADO',
+                                  'bg-gray-100 text-gray-800 border-gray-200': pedido.estado === 'PAGADO'
                                 }">
-                            {{ pedido.estado === 'ENTREGADO' ? 'ENTREGADO AL MOZO' : pedido.estado }}
+                            {{ ['PREPARANDO', 'LISTO', 'ENTREGADO', 'EN_COCINA'].includes(pedido.estado) ? 'EN COCINA' : pedido.estado }}
                           </span>
                         </div>
                       </div>
