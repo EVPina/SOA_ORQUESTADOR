@@ -13,26 +13,28 @@ interface ApiResponse<T> {
 @Injectable({ providedIn: 'root' })
 export class CocinaService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = '/api/orquestador';
+  private readonly baseUrl = environment.apiUrl.replace('/api/v1', '');
+  private readonly orquestadorUrl = `${this.baseUrl}/api/orquestador`;
+  private readonly v1Url = environment.apiUrl;
 
   getOrdenesActivas(): Observable<OrdenProduccionDTO[]> {
-    return this.http.get<ApiResponse<OrdenProduccionDTO[]>>(`${this.apiUrl}/cocina/ordenes/activas`).pipe(
+    return this.http.get<ApiResponse<OrdenProduccionDTO[]>>(`${this.orquestadorUrl}/cocina/ordenes/activas`).pipe(
       map(r => r.data)
     );
   }
 
   getOrdenesPorEstado(estado: string): Observable<OrdenProduccionDTO[]> {
-    return this.http.get<ApiResponse<OrdenProduccionDTO[]>>(`${this.apiUrl}/cocina/ordenes/${this.estadoToEndpoint(estado)}`).pipe(
+    return this.http.get<ApiResponse<OrdenProduccionDTO[]>>(`${this.orquestadorUrl}/cocina/ordenes/${this.estadoToEndpoint(estado)}`).pipe(
       map(r => r.data)
     );
   }
 
   getOrdenById(id: string): Observable<OrdenProduccionDTO> {
-    return this.http.get<OrdenProduccionDTO>(`/api/v1/ordenes-produccion/${id}`);
+    return this.http.get<OrdenProduccionDTO>(`${this.v1Url}/ordenes-produccion/${id}`);
   }
 
   actualizarEstado(id: string, request: EstadoRequestDTO): Observable<OrdenProduccionDTO> {
-    return this.http.patch<OrdenProduccionDTO>(`/api/v1/ordenes-produccion/${id}/estado`, request);
+    return this.http.patch<OrdenProduccionDTO>(`${this.v1Url}/ordenes-produccion/${id}/estado`, request);
   }
 
   getDashboardStats(): Observable<DashboardStats> {
