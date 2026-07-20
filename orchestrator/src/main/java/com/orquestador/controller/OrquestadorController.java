@@ -13,7 +13,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/orquestador")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "${app.frontend-url:http://localhost:4200}")
 public class OrquestadorController {
 
     private final OrquestadorService orquestadorService;
